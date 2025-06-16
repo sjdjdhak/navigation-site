@@ -197,7 +197,7 @@ class AuthService {
   // 验证Token格式
   private isValidToken(token: string): boolean {
     // GitHub Personal Access Token格式验证
-    // 经典Token: g h p _ 开头，40字符
+    // 经典Token: ghp_开头，40字符
     // Fine-grained Token: github_pat_开头
     return /^(ghp_[a-zA-Z0-9]{36}|github_pat_[a-zA-Z0-9_]+)$/.test(token)
   }

@@ -4,6 +4,8 @@ import { resolve } from 'path'
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  // GitHub Pages 部署时的 base 路径
+  base: process.env.NODE_ENV === 'production' ? '/navigation-site/' : '/',
   plugins: [vue()],
   resolve: {
     alias: {

@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "lastUpdated": "2025-01-16T10:00:00.000Z",
+  "lastUpdated": "2024-01-01T00:00:00Z",
   "config": {
     "defaultExpanded": true,
     "showCounts": true,
@@ -10,28 +10,26 @@
     {
       "id": "design-tools",
       "name": "设计工具",
-      "icon": "EditPen",
+      "icon": "fas fa-palette",
       "description": "UI设计、原型设计、图标资源等设计相关工具",
       "order": 1,
+      "expanded": true,
       "children": [
         {
           "id": "ui-design",
           "name": "UI设计",
-          "icon": "Monitor",
           "description": "界面设计工具和资源",
           "order": 1,
           "children": [
             {
               "id": "wireframe",
               "name": "线框图工具",
-              "icon": "Document",
               "description": "快速原型和线框图设计",
               "order": 1
             },
             {
               "id": "visual-design",
               "name": "视觉设计",
-              "icon": "PictureFilled",
               "description": "UI界面和视觉效果设计",
               "order": 2
             }
@@ -40,55 +38,228 @@
         {
           "id": "prototyping",
           "name": "原型设计",
-          "icon": "Setting",
           "description": "交互原型设计工具",
-          "order": 2
+          "order": 2,
+          "children": [
+            {
+              "id": "interactive-prototype",
+              "name": "交互原型",
+              "description": "高保真交互原型工具",
+              "order": 1
+            },
+            {
+              "id": "animation",
+              "name": "动效设计",
+              "description": "界面动画和过渡效果",
+              "order": 2
+            }
+          ]
+        },
+        {
+          "id": "icons",
+          "name": "图标资源",
+          "description": "图标库和图标设计工具",
+          "order": 3
+        },
+        {
+          "id": "illustrations",
+          "name": "插画资源",
+          "description": "插画素材和绘图工具",
+          "order": 4
+        },
+        {
+          "id": "inspiration",
+          "name": "设计灵感",
+          "description": "设计作品展示和灵感网站",
+          "order": 5
         }
       ]
     },
     {
       "id": "dev-resources",
       "name": "开发资源",
-      "icon": "DataLine",
+      "icon": "fas fa-code",
       "description": "前端框架、API工具、数据库等开发资源",
       "order": 2,
+      "expanded": false,
       "children": [
         {
           "id": "frontend",
           "name": "前端开发",
-          "icon": "Monitor",
           "description": "前端框架和工具",
-          "order": 1
+          "order": 1,
+          "children": [
+            {
+              "id": "frameworks",
+              "name": "前端框架",
+              "description": "Vue、React、Angular等框架",
+              "order": 1
+            },
+            {
+              "id": "ui-libraries",
+              "name": "UI组件库",
+              "description": "组件库和设计系统",
+              "order": 2
+            },
+            {
+              "id": "build-tools",
+              "name": "构建工具",
+              "description": "Webpack、Vite等构建工具",
+              "order": 3
+            }
+          ]
         },
         {
           "id": "backend",
           "name": "后端开发",
-          "icon": "Grid",
           "description": "后端框架和服务",
+          "order": 2,
+          "children": [
+            {
+              "id": "api-tools",
+              "name": "API工具",
+              "description": "API开发和测试工具",
+              "order": 1
+            },
+            {
+              "id": "databases",
+              "name": "数据库",
+              "description": "数据库服务和管理工具",
+              "order": 2
+            }
+          ]
+        },
+        {
+          "id": "cloud-services",
+          "name": "云服务",
+          "description": "云计算和部署服务",
+          "order": 3
+        }
+      ]
+    },
+    {
+      "id": "creative-tools",
+      "name": "创意工具",
+      "icon": "fas fa-magic",
+      "description": "视频编辑、3D建模、音频制作等创意工具",
+      "order": 3,
+      "expanded": false,
+      "children": [
+        {
+          "id": "video-editing",
+          "name": "视频编辑",
+          "description": "视频剪辑和后期制作工具",
+          "order": 1,
+          "children": [
+            {
+              "id": "video-editors",
+              "name": "视频编辑器",
+              "description": "专业视频编辑软件",
+              "order": 1
+            },
+            {
+              "id": "motion-graphics",
+              "name": "动态图形",
+              "description": "MG动画和特效制作",
+              "order": 2
+            }
+          ]
+        },
+        {
+          "id": "3d-modeling",
+          "name": "3D建模",
+          "description": "三维建模和渲染工具",
           "order": 2
+        },
+        {
+          "id": "audio-production",
+          "name": "音频制作",
+          "description": "音频编辑和音乐制作工具",
+          "order": 3
         }
       ]
     },
     {
       "id": "productivity",
       "name": "效率工具",
-      "icon": "Document",
+      "icon": "fas fa-tasks",
       "description": "任务管理、笔记应用、团队协作等效率工具",
-      "order": 3,
+      "order": 4,
+      "expanded": false,
       "children": [
         {
           "id": "task-management",
           "name": "任务管理",
-          "icon": "Calendar",
           "description": "项目管理和任务跟踪工具",
-          "order": 1
+          "order": 1,
+          "children": [
+            {
+              "id": "project-management",
+              "name": "项目管理",
+              "description": "团队项目管理平台",
+              "order": 1
+            },
+            {
+              "id": "time-tracking",
+              "name": "时间追踪",
+              "description": "工作时间记录和分析",
+              "order": 2
+            }
+          ]
         },
         {
           "id": "note-taking",
           "name": "笔记应用",
-          "icon": "Edit",
-          "description": "个人和团队笔记工具",
+          "description": "笔记记录和知识管理工具",
           "order": 2
+        },
+        {
+          "id": "collaboration",
+          "name": "团队协作",
+          "description": "团队沟通和协作平台",
+          "order": 3
+        }
+      ]
+    },
+    {
+      "id": "learning",
+      "name": "学习资源",
+      "icon": "fas fa-graduation-cap",
+      "description": "在线课程、技术文档、开发社区等学习资源",
+      "order": 5,
+      "expanded": false,
+      "children": [
+        {
+          "id": "online-courses",
+          "name": "在线课程",
+          "description": "编程和设计在线教育平台",
+          "order": 1,
+          "children": [
+            {
+              "id": "programming-courses",
+              "name": "编程课程",
+              "description": "编程技能学习平台",
+              "order": 1
+            },
+            {
+              "id": "design-courses",
+              "name": "设计课程",
+              "description": "UI/UX设计学习资源",
+              "order": 2
+            }
+          ]
+        },
+        {
+          "id": "documentation",
+          "name": "技术文档",
+          "description": "技术文档和参考资料",
+          "order": 2
+        },
+        {
+          "id": "communities",
+          "name": "开发社区",
+          "description": "开发者社区和论坛",
+          "order": 3
         }
       ]
     }
