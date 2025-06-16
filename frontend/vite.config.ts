@@ -6,7 +6,13 @@ import { resolve } from 'path'
 export default defineConfig({
   // GitHub Pages 部署时的 base 路径
   base: process.env.NODE_ENV === 'production' ? '/navigation-site/' : '/',
-  plugins: [vue()],
+  plugins: [
+    vue({
+      script: {
+        defineModel: true
+      }
+    })
+  ],
   resolve: {
     alias: {
       '@': resolve(__dirname, 'src'),
@@ -33,6 +39,9 @@ export default defineConfig({
         entryFileNames: 'assets/js/[name]-[hash].js',
         assetFileNames: 'assets/[ext]/[name]-[hash].[ext]'
       }
+    },
+    commonjsOptions: {
+      transformMixedEsModules: true
     }
   }
 }) 
