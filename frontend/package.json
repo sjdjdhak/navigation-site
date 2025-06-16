@@ -8,7 +8,8 @@
     "build": "vite build",
     "build-check": "vue-tsc --noEmit && vite build",
     "preview": "vite preview",
-    "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix --ignore-path .gitignore"
+    "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix --ignore-path .gitignore",
+    "vercel-build": "npm run build"
   },
   "dependencies": {
     "@element-plus/icons-vue": "^2.3.1",
