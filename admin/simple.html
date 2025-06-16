@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>简化版 - 工具集导航站后台管理</title>
+    
+    <!-- Element Plus CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/element-plus/dist/index.css">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: "Helvetica Neue", Helvetica, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", Arial, sans-serif;
+            background: linear-gradient(135deg, #409eff 0%, #79bbff 100%);
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .login-container {
+            background: white;
+            border-radius: 8px;
+            padding: 40px;
+            box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 400px;
+        }
+        
+        .login-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .login-logo {
+            font-size: 48px;
+            color: #409eff;
+            margin-bottom: 16px;
+        }
+        
+        .login-title {
+            font-size: 20px;
+            font-weight: 500;
+            color: #303133;
+            margin-bottom: 8px;
+        }
+        
+        .login-subtitle {
+            color: #909399;
+            font-size: 14px;
+        }
+        
+        .admin-container {
+            background: white;
+            border-radius: 8px;
+            padding: 40px;
+            box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 600px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="login-container">
+            <div class="login-header">
+                <div class="login-logo">
+                    <i class="fas fa-spinner fa-spin"></i>
+                </div>
+                <h1 class="login-title">系统加载中</h1>
+                <p class="login-subtitle">请稍候...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Vue 3 -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    
+    <!-- Element Plus -->
+    <script src="https://unpkg.com/element-plus/dist/index.full.js"></script>
+    
+    <script>
+        const { createApp, ref, reactive, onMounted } = Vue;
+        
+        const App = {
+            setup() {
+                const loading = ref(true);
+                const isAuthenticated = ref(false);
+                
+                // 登录表单
+                const loginForm = reactive({
+                    token: '',
+                    repository: '',
+                    remember: false
+                });
+                
+                // 检查认证状态
+                const checkAuth = () => {
+                    const token = localStorage.getItem('github_token') || sessionStorage.getItem('github_token');
+                    const repository = localStorage.getItem('github_repository') || sessionStorage.getItem('github_repository');
+                    
+                    isAuthenticated.value = !!(token && repository);
+                    
+                    if (isAuthenticated.value) {
+                        loginForm.token = token;
+                        loginForm.repository = repository;
+                    }
+                    
+                    return isAuthenticated.value;
+                };
+                
+                // 处理登录
+                const handleLogin = async () => {
+                    if (!loginForm.token || !loginForm.repository) {
+                        ElMessage.error('请填写完整信息');
+                        return;
+                    }
+                    
+                    // 保存认证信息
+                    if (loginForm.remember) {
+                        localStorage.setItem('github_token', loginForm.token);
+                        localStorage.setItem('github_repository', loginForm.repository);
+                    } else {
+                        sessionStorage.setItem('github_token', loginForm.token);
+                        sessionStorage.setItem('github_repository', loginForm.repository);
+                    }
+                    
+                    isAuthenticated.value = true;
+                    ElMessage.success('登录成功！');
+                };
+                
+                // 处理退出
+                const handleLogout = () => {
+                    localStorage.removeItem('github_token');
+                    localStorage.removeItem('github_repository');
+                    sessionStorage.removeItem('github_token');
+                    sessionStorage.removeItem('github_repository');
+                    
+                    isAuthenticated.value = false;
+                    Object.assign(loginForm, {
+                        token: '',
+                        repository: '',
+                        remember: false
+                    });
+                    
+                    ElMessage.success('已退出登录');
+                };
+                
+                onMounted(() => {
+                    setTimeout(() => {
+                        loading.value = false;
+                        checkAuth();
+                    }, 1000);
+                });
+                
+                return {
+                    loading,
+                    isAuthenticated,
+                    loginForm,
+                    handleLogin,
+                    handleLogout
+                };
+            },
+            template: `
+                <div v-if="loading" class="login-container">
+                    <div class="login-header">
+                        <div class="login-logo">
+                            <i class="fas fa-spinner fa-spin"></i>
+                        </div>
+                        <h1 class="login-title">系统加载中</h1>
+                        <p class="login-subtitle">请稍候...</p>
+                    </div>
+                </div>
+                
+                <div v-else-if="!isAuthenticated" class="login-container">
+                    <div class="login-header">
+                        <div class="login-logo">
+                            <i class="fas fa-compass"></i>
+                        </div>
+                        <h1 class="login-title">工具集导航站</h1>
+                        <p class="login-subtitle">后台管理系统</p>
+                    </div>
+                    
+                    <el-form label-position="top" size="large">
+                        <el-form-item label="GitHub Personal Access Token">
+                            <el-input
+                                v-model="loginForm.token"
+                                type="password"
+                                placeholder="请输入GitHub Token"
+                                show-password
+                            />
+                        </el-form-item>
+                        
+                        <el-form-item label="GitHub 仓库">
+                            <el-input
+                                v-model="loginForm.repository"
+                                placeholder="例如: username/navigation-data"
+                            />
+                        </el-form-item>
+                        
+                        <el-form-item>
+                            <el-checkbox v-model="loginForm.remember">
+                                记住登录信息
+                            </el-checkbox>
+                        </el-form-item>
+                        
+                        <el-form-item>
+                            <el-button
+                                type="primary"
+                                style="width: 100%; height: 48px;"
+                                @click="handleLogin"
+                            >
+                                登录
+                            </el-button>
+                        </el-form-item>
+                    </el-form>
+                </div>
+                
+                <div v-else class="admin-container">
+                    <h1>欢迎使用工具集导航站后台管理系统</h1>
+                    <p>GitHub Token: {{ loginForm.token.substring(0, 8) }}...</p>
+                    <p>仓库地址: {{ loginForm.repository }}</p>
+                    
+                    <div style="margin-top: 30px;">
+                        <el-button type="success" size="large">
+                            <i class="fas fa-tachometer-alt"></i>
+                            仪表盘
+                        </el-button>
+                        <el-button type="primary" size="large">
+                            <i class="fas fa-globe"></i>
+                            网站管理
+                        </el-button>
+                        <el-button type="warning" size="large">
+                            <i class="fas fa-folder"></i>
+                            分类管理
+                        </el-button>
+                        <el-button type="info" size="large">
+                            <i class="fas fa-cog"></i>
+                            系统设置
+                        </el-button>
+                    </div>
+                    
+                    <div style="margin-top: 30px;">
+                        <el-button type="danger" @click="handleLogout">
+                            退出登录
+                        </el-button>
+                    </div>
+                </div>
+            `
+        };
+        
+        // 等待DOM加载完成
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('开始初始化简化版应用...');
+            
+            try {
+                const app = createApp(App);
+                
+                if (window.ElementPlus) {
+                    app.use(ElementPlus);
+                    console.log('Element Plus 已加载');
+                }
+                
+                app.mount('#app');
+                console.log('简化版应用已成功挂载');
+                
+            } catch (error) {
+                console.error('应用初始化失败:', error);
+                document.getElementById('app').innerHTML = `
+                    <div class="login-container">
+                        <div class="login-header">
+                            <div class="login-logo">
+                                <i class="fas fa-exclamation-triangle" style="color: #f56c6c;"></i>
+                            </div>
+                            <h1 class="login-title">加载失败</h1>
+                            <p class="login-subtitle">错误: ${error.message}</p>
+                        </div>
+                    </div>
+                `;
+            }
+        });
+    </script>
+</body>
+</html> 

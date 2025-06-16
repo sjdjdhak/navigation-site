@@ -1,0 +1,28 @@
+[
+  {
+    "id": "figma",
+    "title": "Figma",
+    "description": "专业的UI/UX设计协作工具，支持实时协作和原型设计",
+    "url": "https://www.figma.com",
+    "domain": "figma.com",
+    "icon": "https://www.figma.com/favicon.ico",
+    "tags": ["UI设计", "协作", "原型"],
+    "categoryPath": ["design-tools", "ui-design"],
+    "featured": true,
+    "createdAt": "2025-01-16T10:00:00.000Z",
+    "updatedAt": "2025-01-16T10:00:00.000Z"
+  },
+  {
+    "id": "sketch",
+    "title": "Sketch",
+    "description": "Mac平台专业的UI设计工具，界面简洁，功能强大",
+    "url": "https://www.sketch.com",
+    "domain": "sketch.com",
+    "icon": "https://www.sketch.com/favicon.ico",
+    "tags": ["UI设计", "Mac", "设计工具"],
+    "categoryPath": ["design-tools", "ui-design"],
+    "featured": false,
+    "createdAt": "2025-01-16T10:00:00.000Z",
+    "updatedAt": "2025-01-16T10:00:00.000Z"
+  }
+] 

@@ -1,0 +1,1043 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fluent Design导航站</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* Fluent Design 颜色系统 */
+            --primary: #0067c0;
+            --primary-light: #d0e6ff;
+            --primary-dark: #004578;
+            --accent: #9c2daf;
+            --success: #107c10;
+            --warning: #d83b01;
+            --error: #a4262c;
+            
+            --text-primary: #201f1e;
+            --text-secondary: #605e5c;
+            --text-tertiary: #a19f9d;
+            
+            --surface: #ffffff;
+            --card: #faf9f8;
+            --card-hover: #f3f2f1;
+            --border: #edebe9;
+            --border-light: #f3f2f1;
+            
+            --shadow: rgba(0, 0, 0, 0.08);
+            --shadow-hover: rgba(0, 0, 0, 0.16);
+            --shadow-active: rgba(0, 0, 0, 0.24);
+            
+            --radius-sm: 4px;
+            --radius-md: 8px;
+            --radius-lg: 12px;
+            --radius-xl: 16px;
+            
+            --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+            
+            /* 侧边栏尺寸 */
+            --sidebar-width: 280px;
+            --sidebar-collapsed: -280px;
+        }
+
+        .dark-theme {
+            --primary: #60b8ff;
+            --primary-light: #004377;
+            --primary-dark: #002d50;
+            
+            --text-primary: #f3f2f1;
+            --text-secondary: #a19f9d;
+            --text-tertiary: #797775;
+            
+            --surface: #1b1a19;
+            --card: #252423;
+            --card-hover: #2d2c2b;
+            --border: #3b3a39;
+            --border-light: #323130;
+            
+            --shadow: rgba(0, 0, 0, 0.3);
+            --shadow-hover: rgba(0, 0, 0, 0.5);
+            --shadow-active: rgba(0, 0, 0, 0.7);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+        }
+
+        body {
+            background-color: var(--surface);
+            color: var(--text-primary);
+            min-height: 100vh;
+            transition: var(--transition);
+            overflow-x: hidden;
+            line-height: 1.6;
+        }
+
+        /* 顶部导航栏 */
+        .navbar {
+            position: sticky;
+            top: 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 24px;
+            height: 64px;
+            background-color: var(--card);
+            box-shadow: 0 2px 8px var(--shadow);
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+            background: rgba(250, 249, 248, 0.8);
+        }
+
+        .dark-theme .navbar {
+            background: rgba(37, 36, 35, 0.8);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-icon {
+            font-size: 24px;
+            color: var(--primary);
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--primary-light);
+            border-radius: 50%;
+        }
+
+        .logo-text {
+            font-size: 20px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 32px;
+            list-style: none;
+        }
+
+        .nav-links li {
+            position: relative;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: var(--text-secondary);
+            font-weight: 500;
+            padding: 8px 0;
+            transition: var(--transition);
+        }
+
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background-color: var(--primary);
+            border-radius: 2px;
+            transition: width 0.3s ease;
+        }
+
+        .nav-links a:hover {
+            color: var(--text-primary);
+        }
+
+        .nav-links a:hover::after,
+        .nav-links a.active::after {
+            width: 100%;
+        }
+
+        .nav-links a.active {
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        .nav-actions {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .theme-toggle {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 18px;
+            cursor: pointer;
+            transition: var(--transition);
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+        }
+
+        .theme-toggle:hover {
+            background: var(--card);
+            color: var(--text-primary);
+        }
+
+        .menu-toggle {
+            display: none;
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: var(--text-primary);
+            cursor: pointer;
+            z-index: 1001;
+        }
+
+        /* 搜索区域 */
+        .search-section {
+            padding: 80px 24px 40px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 24px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .search-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 20% 20%, var(--primary-light) 0%, transparent 60%);
+            opacity: 0.1;
+            z-index: -1;
+        }
+
+        .dark-theme .search-section::before {
+            background: radial-gradient(circle at 20% 20%, var(--primary-dark) 0%, transparent 70%);
+            opacity: 0.2;
+        }
+
+        .search-title {
+            font-size: 40px;
+            font-weight: 800;
+            margin-bottom: 8px;
+            letter-spacing: -1px;
+            background: linear-gradient(to right, var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .search-subtitle {
+            color: var(--text-secondary);
+            max-width: 600px;
+            font-size: 18px;
+            font-weight: 400;
+        }
+
+        .search-container {
+            position: relative;
+            width: 100%;
+            max-width: 720px;
+            z-index: 2;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 16px 24px 16px 52px;
+            font-size: 18px;
+            border: 2px solid transparent;
+            border-radius: var(--radius-xl);
+            background-color: var(--card);
+            color: var(--text-primary);
+            box-shadow: 0 4px 20px var(--shadow);
+            transition: var(--transition);
+            font-weight: 500;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 6px 24px var(--shadow-hover);
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 24px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-tertiary);
+            font-size: 20px;
+            transition: var(--transition);
+        }
+
+        .search-input:focus + .search-icon {
+            color: var(--primary);
+        }
+
+        .search-hint {
+            color: var(--text-tertiary);
+            font-size: 14px;
+            margin-top: 12px;
+        }
+
+        /* 主内容区 */
+        .main-content {
+            display: flex;
+            padding: 0 24px 60px;
+            gap: 32px;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        /* 抽屉式侧边栏 */
+        .sidebar-container {
+            position: relative;
+        }
+
+        .sidebar {
+            width: var(--sidebar-width);
+            flex-shrink: 0;
+            background-color: var(--card);
+            border-radius: var(--radius-xl);
+            padding: 24px;
+            height: fit-content;
+            position: sticky;
+            top: 84px;
+            box-shadow: 0 8px 24px var(--shadow);
+            transition: transform 0.3s ease;
+            z-index: 100;
+        }
+
+        .sidebar-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 99;
+            display: none;
+            backdrop-filter: blur(4px);
+        }
+
+        .sidebar-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .sidebar-title {
+            font-size: 20px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+        .close-sidebar {
+            display: none;
+            background: none;
+            border: none;
+            font-size: 20px;
+            color: var(--text-secondary);
+            cursor: pointer;
+        }
+
+        .categories {
+            list-style: none;
+        }
+
+        .category {
+            margin-bottom: 12px;
+        }
+
+        .category-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 0;
+            cursor: pointer;
+            font-weight: 600;
+            transition: var(--transition);
+            border-bottom: 1px solid transparent;
+        }
+
+        .category-header:hover {
+            color: var(--primary);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .category-icon {
+            transition: transform 0.3s ease;
+            color: var(--text-tertiary);
+        }
+
+        .category.open .category-icon {
+            transform: rotate(90deg);
+            color: var(--primary);
+        }
+
+        .subcategories {
+            list-style: none;
+            margin: 12px 0 20px 16px;
+            display: none;
+        }
+
+        .category.open .subcategories {
+            display: block;
+        }
+
+        .subcategory {
+            padding: 10px 0;
+            cursor: pointer;
+            transition: var(--transition);
+            position: relative;
+            padding-left: 20px;
+            font-size: 15px;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+        }
+
+        .subcategory:hover {
+            color: var(--text-primary);
+        }
+
+        .subcategory::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            height: 8px;
+            width: 8px;
+            background-color: var(--text-tertiary);
+            border-radius: 50%;
+            transition: var(--transition);
+        }
+
+        .subcategory:hover::before,
+        .subcategory.active::before {
+            background-color: var(--primary);
+            transform: translateY(-50%) scale(1.5);
+        }
+
+        .subcategory.active {
+            color: var(--primary);
+            font-weight: 500;
+        }
+
+        /* 卡片网格 */
+        .cards-container {
+            flex: 1;
+        }
+
+        .cards-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 24px;
+        }
+
+        .section-title {
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        .view-all {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 500;
+            transition: var(--transition);
+        }
+
+        .view-all:hover {
+            text-decoration: underline;
+        }
+
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 24px;
+        }
+
+        .card {
+            background-color: var(--card);
+            border-radius: var(--radius-xl);
+            padding: 24px;
+            transition: var(--transition);
+            box-shadow: 0 4px 12px var(--shadow);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid var(--border-light);
+        }
+
+        .card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 12px 28px var(--shadow-hover);
+            background-color: var(--card-hover);
+            z-index: 10;
+        }
+
+        .card::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, transparent, rgba(var(--primary-rgb), 0.1));
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            z-index: -1;
+        }
+
+        .card:hover::after {
+            opacity: 1;
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .card-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: var(--radius-md);
+            background: var(--primary-light);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            flex-shrink: 0;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+        }
+
+        .card-icon img {
+            width: 32px;
+            height: 32px;
+            object-fit: contain;
+        }
+
+        .card-title {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 4px;
+            letter-spacing: -0.5px;
+        }
+
+        .card-url {
+            color: var(--text-tertiary);
+            font-size: 14px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            transition: var(--transition);
+        }
+
+        .card:hover .card-url {
+            color: var(--primary);
+        }
+
+        .card-desc {
+            color: var(--text-secondary);
+            line-height: 1.7;
+            font-size: 15px;
+        }
+
+        .card-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: auto;
+        }
+
+        .tag {
+            background-color: var(--primary-light);
+            color: var(--primary);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 500;
+            transition: var(--transition);
+        }
+
+        .card:hover .tag {
+            background-color: var(--primary);
+            color: white;
+        }
+
+        /* 波纹效果 */
+        .ripple {
+            position: absolute;
+            border-radius: 50%;
+            background-color: rgba(var(--primary-rgb), 0.15);
+            transform: scale(0);
+            animation: ripple 0.6s var(--spring);
+            pointer-events: none;
+        }
+
+        @keyframes ripple {
+            to {
+                transform: scale(4);
+                opacity: 0;
+            }
+        }
+
+        /* 移动端适配 - 抽屉式布局 */
+        @media (max-width: 1024px) {
+            .cards-grid {
+                grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+                gap: 20px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .menu-toggle {
+                display: block;
+            }
+            
+            .nav-links {
+                display: none;
+            }
+            
+            .navbar {
+                height: 60px;
+                padding: 0 20px;
+            }
+            
+            .search-section {
+                padding: 60px 20px 30px;
+            }
+            
+            .search-title {
+                font-size: 32px;
+            }
+            
+            .main-content {
+                padding: 0 20px 40px;
+                flex-direction: column;
+            }
+            
+            .sidebar-container {
+                position: fixed;
+                top: 0;
+                left: 0;
+                bottom: 0;
+                z-index: 100;
+                transform: translateX(var(--sidebar-collapsed));
+                transition: transform 0.3s ease;
+            }
+            
+            .sidebar-container.active {
+                transform: translateX(0);
+            }
+            
+            .sidebar-container.active + .sidebar-overlay {
+                display: block;
+            }
+            
+            .sidebar {
+                width: var(--sidebar-width);
+                height: 100vh;
+                border-radius: 0;
+                top: 0;
+                box-shadow: 0 0 40px rgba(0, 0, 0, 0.2);
+                overflow-y: auto;
+            }
+            
+            .close-sidebar {
+                display: block;
+            }
+            
+            .cards-grid {
+                grid-template-columns: 1fr;
+                gap: 16px;
+            }
+            
+            .card {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 顶部导航栏 -->
+    <nav class="navbar">
+        <div class="logo">
+            <i class="fas fa-compass logo-icon"></i>
+            <span class="logo-text">导航站</span>
+        </div>
+        
+        <ul class="nav-links">
+            <li><a href="#" class="active">导航</a></li>
+            <li><a href="#">博客</a></li>
+            <li><a href="#">作品集</a></li>
+            <li><a href="#">关于我</a></li>
+        </ul>
+        
+        <div class="nav-actions">
+            <button class="theme-toggle" id="themeToggle">
+                <i class="fas fa-moon"></i>
+            </button>
+            <button class="menu-toggle" id="menuToggle">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+    </nav>
+
+    <!-- 搜索区域 -->
+    <section class="search-section">
+        <div>
+            <h1 class="search-title">发现优质资源</h1>
+            <p class="search-subtitle">精选设计、开发与创意资源，助您高效工作与创作</p>
+        </div>
+        
+        <div class="search-container">
+            <i class="fas fa-search search-icon"></i>
+            <input 
+                type="text" 
+                class="search-input" 
+                placeholder="搜索工具、资源或关键词..."
+                id="searchInput"
+            >
+            <p class="search-hint">按 Ctrl + K 快速聚焦搜索框</p>
+        </div>
+    </section>
+
+    <!-- 主内容区 -->
+    <div class="main-content">
+        <!-- 抽屉式侧边栏 -->
+        <div class="sidebar-container" id="sidebarContainer">
+            <aside class="sidebar">
+                <div class="sidebar-header">
+                    <h2 class="sidebar-title">资源分类</h2>
+                    <button class="close-sidebar" id="closeSidebar">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                
+                <ul class="categories">
+                    <li class="category open">
+                        <div class="category-header">
+                            <span>设计工具</span>
+                            <i class="fas fa-chevron-right category-icon"></i>
+                        </div>
+                        <ul class="subcategories">
+                            <li class="subcategory active">UI设计</li>
+                            <li class="subcategory">原型设计</li>
+                            <li class="subcategory">图标资源</li>
+                            <li class="subcategory">插画资源</li>
+                            <li class="subcategory">设计灵感</li>
+                        </ul>
+                    </li>
+                    
+                    <li class="category open">
+                        <div class="category-header">
+                            <span>开发资源</span>
+                            <i class="fas fa-chevron-right category-icon"></i>
+                        </div>
+                        <ul class="subcategories">
+                            <li class="subcategory">前端框架</li>
+                            <li class="subcategory">API工具</li>
+                            <li class="subcategory">数据库</li>
+                            <li class="subcategory">云服务</li>
+                        </ul>
+                    </li>
+                    
+                    <li class="category">
+                        <div class="category-header">
+                            <span>创意工具</span>
+                            <i class="fas fa-chevron-right category-icon"></i>
+                        </div>
+                        <ul class="subcategories">
+                            <li class="subcategory">视频编辑</li>
+                            <li class="subcategory">3D建模</li>
+                            <li class="subcategory">音频制作</li>
+                        </ul>
+                    </li>
+                    
+                    <li class="category">
+                        <div class="category-header">
+                            <span>效率工具</span>
+                            <i class="fas fa-chevron-right category-icon"></i>
+                        </div>
+                        <ul class="subcategories">
+                            <li class="subcategory">任务管理</li>
+                            <li class="subcategory">笔记应用</li>
+                            <li class="subcategory">团队协作</li>
+                        </ul>
+                    </li>
+                    
+                    <li class="category">
+                        <div class="category-header">
+                            <span>学习资源</span>
+                            <i class="fas fa-chevron-right category-icon"></i>
+                        </div>
+                        <ul class="subcategories">
+                            <li class="subcategory">在线课程</li>
+                            <li class="subcategory">技术文档</li>
+                            <li class="subcategory">开发社区</li>
+                        </ul>
+                    </li>
+                </ul>
+            </aside>
+        </div>
+        
+        <!-- 侧边栏遮罩层 -->
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
+        
+        <!-- 卡片内容区 -->
+        <div class="cards-container">
+            <div class="cards-header">
+                <h2 class="section-title">推荐资源</h2>
+                <a href="#" class="view-all">查看全部</a>
+            </div>
+            
+            <div class="cards-grid" id="cardsGrid">
+                <!-- 卡片将通过JS生成 -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 设置RGB颜色变量
+        document.documentElement.style.setProperty('--primary-rgb', '0, 103, 192');
+        
+        // 主题切换功能
+        const themeToggle = document.getElementById('themeToggle');
+        themeToggle.addEventListener('click', () => {
+            document.body.classList.toggle('dark-theme');
+            
+            const icon = themeToggle.querySelector('i');
+            if (document.body.classList.contains('dark-theme')) {
+                icon.classList.remove('fa-moon');
+                icon.classList.add('fa-sun');
+                document.documentElement.style.setProperty('--primary-rgb', '96, 184, 255');
+            } else {
+                icon.classList.remove('fa-sun');
+                icon.classList.add('fa-moon');
+                document.documentElement.style.setProperty('--primary-rgb', '0, 103, 192');
+            }
+        });
+
+        // 抽屉式侧边栏功能
+        const menuToggle = document.getElementById('menuToggle');
+        const sidebarContainer = document.getElementById('sidebarContainer');
+        const sidebarOverlay = document.getElementById('sidebarOverlay');
+        const closeSidebar = document.getElementById('closeSidebar');
+        
+        menuToggle.addEventListener('click', () => {
+            sidebarContainer.classList.add('active');
+        });
+        
+        closeSidebar.addEventListener('click', () => {
+            sidebarContainer.classList.remove('active');
+        });
+        
+        sidebarOverlay.addEventListener('click', () => {
+            sidebarContainer.classList.remove('active');
+        });
+
+        // 分类展开/折叠功能
+        const categoryHeaders = document.querySelectorAll('.category-header');
+        categoryHeaders.forEach(header => {
+            header.addEventListener('click', () => {
+                const category = header.parentElement;
+                category.classList.toggle('open');
+            });
+        });
+
+        // 子分类选择功能
+        const subcategories = document.querySelectorAll('.subcategory');
+        subcategories.forEach(sub => {
+            sub.addEventListener('click', () => {
+                // 移除当前分类的所有active状态
+                const siblings = Array.from(sub.parentElement.children);
+                siblings.forEach(sib => sib.classList.remove('active'));
+                
+                // 添加当前项的active状态
+                sub.classList.add('active');
+            });
+        });
+
+        // 搜索框快捷键
+        const searchInput = document.getElementById('searchInput');
+        document.addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                e.preventDefault();
+                searchInput.focus();
+            }
+        });
+
+        // 模拟数据 - 包含实际网站URL
+        const cardData = [
+            {
+                title: "Figma",
+                desc: "强大的云端协作设计工具，支持多人实时协作",
+                url: "https://www.figma.com",
+                domain: "figma.com",
+                tags: ["设计", "协作", "UI", "原型"],
+                icon: "fa-brands fa-figma"
+            },
+            {
+                title: "Notion",
+                desc: "一体化工作空间，集笔记、任务、数据库于一身",
+                url: "https://www.notion.so",
+                domain: "notion.so",
+                tags: ["效率", "笔记", "协作", "数据库"],
+                icon: "fa-solid fa-file-lines"
+            },
+            {
+                title: "GitHub",
+                desc: "全球最大的代码托管平台，支持版本控制和协作开发",
+                url: "https://github.com",
+                domain: "github.com",
+                tags: ["开发", "协作", "开源", "代码"],
+                icon: "fa-brands fa-github"
+            },
+            {
+                title: "VS Code",
+                desc: "轻量级但功能强大的源代码编辑器，支持多种语言",
+                url: "https://code.visualstudio.com",
+                domain: "code.visualstudio.com",
+                tags: ["开发", "编辑器", "工具", "编程"],
+                icon: "fa-solid fa-code"
+            },
+            {
+                title: "Dribbble",
+                desc: "设计师展示作品、获取灵感的创意社区",
+                url: "https://dribbble.com",
+                domain: "dribbble.com",
+                tags: ["设计", "灵感", "创意", "作品集"],
+                icon: "fa-brands fa-dribbble"
+            },
+            {
+                title: "Unsplash",
+                desc: "高质量免费图片资源库，适用于个人和商业项目",
+                url: "https://unsplash.com",
+                domain: "unsplash.com",
+                tags: ["资源", "图片", "设计", "免费"],
+                icon: "fa-solid fa-camera"
+            },
+            {
+                title: "Canva",
+                desc: "在线设计平台，提供海量模板和简单易用的工具",
+                url: "https://www.canva.com",
+                domain: "canva.com",
+                tags: ["设计", "模板", "工具", "图形"],
+                icon: "fa-solid fa-palette"
+            },
+            {
+                title: "Firebase",
+                desc: "谷歌提供的后端即服务，包含实时数据库和身份验证",
+                url: "https://firebase.google.com",
+                domain: "firebase.google.com",
+                tags: ["开发", "后端", "数据库", "云服务"],
+                icon: "fa-brands fa-google"
+            },
+            {
+                title: "Miro",
+                desc: "在线协作白板平台，支持团队头脑风暴和项目管理",
+                url: "https://miro.com",
+                domain: "miro.com",
+                tags: ["协作", "白板", "设计", "思维导图"],
+                icon: "fa-solid fa-chalkboard"
+            }
+        ];
+
+        // 生成卡片 - 使用实际网站的favicon
+        const cardsGrid = document.getElementById('cardsGrid');
+        
+        cardData.forEach(card => {
+            const cardElement = document.createElement('div');
+            cardElement.className = 'card';
+            
+            // 添加波纹效果
+            cardElement.addEventListener('click', function(e) {
+                const ripple = document.createElement('span');
+                ripple.className = 'ripple';
+                
+                const rect = this.getBoundingClientRect();
+                const size = Math.max(rect.width, rect.height);
+                const x = e.clientX - rect.left - size/2;
+                const y = e.clientY - rect.top - size/2;
+                
+                ripple.style.width = ripple.style.height = `${size}px`;
+                ripple.style.left = `${x}px`;
+                ripple.style.top = `${y}px`;
+                
+                this.appendChild(ripple);
+                
+                // 移除波纹元素并打开链接
+                setTimeout(() => {
+                    ripple.remove();
+                    window.open(card.url, '_blank');
+                }, 600);
+            });
+            
+            // 使用实际网站的favicon
+            cardElement.innerHTML = `
+                <div class="card-header">
+                    <div class="card-icon">
+                        <img src="https://www.google.com/s2/favicons?domain=${card.domain}&sz=64" alt="${card.title}">
+                    </div>
+                    <div>
+                        <h3 class="card-title">${card.title}</h3>
+                        <div class="card-url">${card.domain}</div>
+                    </div>
+                </div>
+                <p class="card-desc">${card.desc}</p>
+                <div class="card-tags">
+                    ${card.tags.map(tag => `<span class="tag">${tag}</span>`).join('')}
+                </div>
+            `;
+            
+            cardsGrid.appendChild(cardElement);
+        });
+
+        // 搜索功能
+        searchInput.addEventListener('input', () => {
+            const searchTerm = searchInput.value.toLowerCase();
+            const cards = document.querySelectorAll('.card');
+            
+            cards.forEach(card => {
+                const title = card.querySelector('.card-title').textContent.toLowerCase();
+                const desc = card.querySelector('.card-desc').textContent.toLowerCase();
+                const tags = Array.from(card.querySelectorAll('.tag')).map(tag => tag.textContent.toLowerCase());
+                
+                if (title.includes(searchTerm) || 
+                    desc.includes(searchTerm) || 
+                    tags.some(tag => tag.includes(searchTerm))) {
+                    card.style.display = 'flex';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        });
+    </script>
+</body>
+</html>

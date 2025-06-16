@@ -1,0 +1,96 @@
+{
+  "version": "1.0",
+  "lastUpdated": "2025-01-16T10:00:00.000Z",
+  "config": {
+    "defaultExpanded": true,
+    "showCounts": true,
+    "showIcons": true
+  },
+  "categories": [
+    {
+      "id": "design-tools",
+      "name": "设计工具",
+      "icon": "EditPen",
+      "description": "UI设计、原型设计、图标资源等设计相关工具",
+      "order": 1,
+      "children": [
+        {
+          "id": "ui-design",
+          "name": "UI设计",
+          "icon": "Monitor",
+          "description": "界面设计工具和资源",
+          "order": 1,
+          "children": [
+            {
+              "id": "wireframe",
+              "name": "线框图工具",
+              "icon": "Document",
+              "description": "快速原型和线框图设计",
+              "order": 1
+            },
+            {
+              "id": "visual-design",
+              "name": "视觉设计",
+              "icon": "PictureFilled",
+              "description": "UI界面和视觉效果设计",
+              "order": 2
+            }
+          ]
+        },
+        {
+          "id": "prototyping",
+          "name": "原型设计",
+          "icon": "Setting",
+          "description": "交互原型设计工具",
+          "order": 2
+        }
+      ]
+    },
+    {
+      "id": "dev-resources",
+      "name": "开发资源",
+      "icon": "DataLine",
+      "description": "前端框架、API工具、数据库等开发资源",
+      "order": 2,
+      "children": [
+        {
+          "id": "frontend",
+          "name": "前端开发",
+          "icon": "Monitor",
+          "description": "前端框架和工具",
+          "order": 1
+        },
+        {
+          "id": "backend",
+          "name": "后端开发",
+          "icon": "Grid",
+          "description": "后端框架和服务",
+          "order": 2
+        }
+      ]
+    },
+    {
+      "id": "productivity",
+      "name": "效率工具",
+      "icon": "Document",
+      "description": "任务管理、笔记应用、团队协作等效率工具",
+      "order": 3,
+      "children": [
+        {
+          "id": "task-management",
+          "name": "任务管理",
+          "icon": "Calendar",
+          "description": "项目管理和任务跟踪工具",
+          "order": 1
+        },
+        {
+          "id": "note-taking",
+          "name": "笔记应用",
+          "icon": "Edit",
+          "description": "个人和团队笔记工具",
+          "order": 2
+        }
+      ]
+    }
+  ]
+} 

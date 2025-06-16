@@ -1,0 +1,122 @@
+// Fluent Design 颜色系统
+:root {
+  /* 主色调 */
+  --primary: #0067c0;
+  --primary-light: #d0e6ff;
+  --primary-dark: #004578;
+  --accent: #9c2daf;
+  --success: #107c10;
+  --warning: #d83b01;
+  --error: #a4262c;
+  
+  /* 文本颜色 */
+  --text-primary: #201f1e;
+  --text-secondary: #605e5c;
+  --text-tertiary: #a19f9d;
+  
+  /* 表面颜色 */
+  --surface: #ffffff;
+  --card: #faf9f8;
+  --card-hover: #f3f2f1;
+  --border: #edebe9;
+  --border-light: #f3f2f1;
+  
+  /* 阴影 */
+  --shadow: rgba(0, 0, 0, 0.08);
+  --shadow-hover: rgba(0, 0, 0, 0.16);
+  --shadow-active: rgba(0, 0, 0, 0.24);
+  
+  /* 圆角 */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  
+  /* 动画 */
+  --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  
+  /* 布局尺寸 */
+  --sidebar-width: 280px;
+  --sidebar-collapsed: -280px;
+  --navbar-height: 64px;
+  
+  /* RGB颜色值（用于透明度） */
+  --primary-rgb: 0, 103, 192;
+}
+
+// 暗色主题
+.dark-theme {
+  --primary: #60b8ff;
+  --primary-light: #004377;
+  --primary-dark: #002d50;
+  
+  --text-primary: #f3f2f1;
+  --text-secondary: #a19f9d;
+  --text-tertiary: #797775;
+  
+  --surface: #1b1a19;
+  --card: #252423;
+  --card-hover: #2d2c2b;
+  --border: #3b3a39;
+  --border-light: #323130;
+  
+  --shadow: rgba(0, 0, 0, 0.3);
+  --shadow-hover: rgba(0, 0, 0, 0.5);
+  --shadow-active: rgba(0, 0, 0, 0.7);
+  
+  --primary-rgb: 96, 184, 255;
+}
+
+// SCSS变量（用于计算和混合）
+$primary: var(--primary);
+$primary-light: var(--primary-light);
+$primary-dark: var(--primary-dark);
+
+$text-primary: var(--text-primary);
+$text-secondary: var(--text-secondary);
+$text-tertiary: var(--text-tertiary);
+
+$surface: var(--surface);
+$card: var(--card);
+$card-hover: var(--card-hover);
+
+$transition: var(--transition);
+$spring: var(--spring);
+
+$radius-sm: var(--radius-sm);
+$radius-md: var(--radius-md);
+$radius-lg: var(--radius-lg);
+$radius-xl: var(--radius-xl);
+
+// 混合宏
+@mixin card-shadow {
+  box-shadow: 0 4px 12px var(--shadow);
+}
+
+@mixin card-hover-shadow {
+  box-shadow: 0 12px 28px var(--shadow-hover);
+}
+
+@mixin fluent-button {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: var(--transition);
+  
+  &:hover {
+    background: var(--card-hover);
+    border-color: var(--primary);
+  }
+}
+
+@mixin glass-effect {
+  backdrop-filter: blur(10px);
+  background: rgba(250, 249, 248, 0.8);
+  
+  .dark-theme & {
+    background: rgba(37, 36, 35, 0.8);
+  }
+} 

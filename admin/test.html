@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>测试页面 - 工具集导航站后台管理</title>
+    
+    <!-- Element Plus CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/element-plus/dist/index.css">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- 自定义样式 -->
+    <link rel="stylesheet" href="src/styles/variables.css">
+    <link rel="stylesheet" href="src/styles/components.css">
+    <link rel="stylesheet" href="src/styles/pages.css">
+</head>
+<body>
+    <div id="app">
+        <div class="loading-container">
+            <div class="loading-spinner">
+                <i class="fas fa-spinner fa-spin"></i>
+                <p>测试页面加载中...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Vue 3 -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    
+    <!-- Element Plus -->
+    <script src="https://unpkg.com/element-plus/dist/index.full.js"></script>
+    
+    <!-- Vue Router -->
+    <script src="https://unpkg.com/vue-router@4/dist/vue-router.global.js"></script>
+    
+    <!-- 测试脚本 -->
+    <script>
+        console.log('开始加载测试页面...');
+        
+        // 检查依赖是否加载
+        console.log('Vue:', typeof Vue);
+        console.log('ElementPlus:', typeof ElementPlus);
+        console.log('VueRouter:', typeof VueRouter);
+        
+        // 简单的测试应用
+        const { createApp, ref, onMounted } = Vue;
+        
+        const TestApp = {
+            setup() {
+                const loading = ref(true);
+                const message = ref('测试应用正在初始化...');
+                
+                onMounted(() => {
+                    console.log('测试应用已挂载');
+                    setTimeout(() => {
+                        loading.value = false;
+                        message.value = '测试应用加载成功！';
+                    }, 2000);
+                });
+                
+                return {
+                    loading,
+                    message
+                };
+            },
+            template: `
+                <div style="padding: 20px; text-align: center;">
+                    <div v-if="loading" class="loading-container">
+                        <div class="loading-spinner">
+                            <i class="fas fa-spinner fa-spin"></i>
+                            <p>{{ message }}</p>
+                        </div>
+                    </div>
+                    <div v-else>
+                        <h1>{{ message }}</h1>
+                        <el-button type="primary" @click="$message.success('Element Plus 工作正常！')">
+                            测试 Element Plus
+                        </el-button>
+                    </div>
+                </div>
+            `
+        };
+        
+        // 等待DOM加载完成
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('DOM加载完成，初始化测试应用...');
+            
+            try {
+                const app = createApp(TestApp);
+                
+                // 使用Element Plus
+                if (window.ElementPlus) {
+                    app.use(ElementPlus);
+                    console.log('Element Plus 已加载');
+                } else {
+                    console.error('Element Plus 未加载');
+                }
+                
+                // 挂载应用
+                app.mount('#app');
+                console.log('测试应用已挂载到 #app');
+                
+            } catch (error) {
+                console.error('测试应用初始化失败:', error);
+                document.getElementById('app').innerHTML = `
+                    <div style="padding: 20px; text-align: center; color: red;">
+                        <h1>测试应用初始化失败</h1>
+                        <p>错误信息: ${error.message}</p>
+                        <p>请检查浏览器控制台获取详细信息</p>
+                    </div>
+                `;
+            }
+        });
+    </script>
+</body>
+</html> 

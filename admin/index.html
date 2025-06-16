@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>工具集导航站 - 后台管理</title>
+    
+    <!-- Element Plus CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/element-plus/dist/index.css">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- 自定义样式 -->
+    <link rel="stylesheet" href="src/styles/variables.css">
+    <link rel="stylesheet" href="src/styles/components.css">
+    <link rel="stylesheet" href="src/styles/pages.css">
+</head>
+<body>
+    <div id="app">
+        <!-- 加载中状态 -->
+        <div class="loading-container" v-if="loading">
+            <div class="loading-spinner">
+                <i class="fas fa-spinner fa-spin"></i>
+                <p>加载中...</p>
+            </div>
+        </div>
+        
+        <!-- 主应用 -->
+        <div v-else>
+            <!-- 未登录状态 -->
+            <div v-if="!isAuthenticated" class="login-container">
+                <login-view @login-success="handleLoginSuccess"></login-view>
+            </div>
+            
+            <!-- 已登录状态 -->
+            <div v-else class="admin-container">
+                <app-layout>
+                    <router-view></router-view>
+                </app-layout>
+            </div>
+        </div>
+    </div>
+
+    <!-- Vue 3 -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    
+    <!-- Element Plus -->
+    <script src="https://unpkg.com/element-plus/dist/index.full.js"></script>
+    
+    <!-- Vue Router -->
+    <script src="https://unpkg.com/vue-router@4/dist/vue-router.global.js"></script>
+    
+    <!-- 应用模块 -->
+    <!-- 布局组件 -->
+    <script src="src/components/layout/Header.js"></script>
+    <script src="src/components/layout/Sidebar.js"></script>
+    <script src="src/components/layout/Layout.js"></script>
+    
+    <!-- 页面组件 -->
+    <script src="src/views/Login.js"></script>
+    <script src="src/views/Dashboard.js"></script>
+    <script src="src/views/SiteManager.js"></script>
+    <script src="src/views/CategoryManager.js"></script>
+    <script src="src/views/Settings.js"></script>
+    
+    <!-- 路由配置 -->
+    <script src="src/config/routes.js"></script>
+    
+    <!-- 主应用 -->
+    <script src="src/main.js"></script>
+</body>
+</html> 
