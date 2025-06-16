@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Favicon功能测试</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .test-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .test-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            border: 1px solid #e8e8e8;
+            border-radius: 6px;
+            background: #fafafa;
+        }
+        .favicon {
+            width: 32px;
+            height: 32px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+        }
+        .info {
+            flex: 1;
+        }
+        .domain {
+            font-weight: 600;
+            color: #333;
+        }
+        .status {
+            font-size: 12px;
+            margin-top: 4px;
+        }
+        .success { color: #52c41a; }
+        .loading { color: #1890ff; }
+        .error { color: #ff4d4f; }
+        .controls {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        button {
+            padding: 8px 16px;
+            border: 1px solid #d9d9d9;
+            border-radius: 4px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        button:hover {
+            border-color: #1890ff;
+            color: #1890ff;
+        }
+        button.primary {
+            background: #1890ff;
+            color: white;
+            border-color: #1890ff;
+        }
+        button.primary:hover {
+            background: #40a9ff;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .stat-card {
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border-radius: 6px;
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        .stat-label {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        #log {
+            background: #000;
+            color: #0f0;
+            padding: 15px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🚀 Favicon服务测试</h1>
+        <p>测试新的favicon获取功能和智能降级策略</p>
+    </div>
+
+    <div class="test-section">
+        <h2>📊 统计信息</h2>
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-value" id="networkStatus">检测中...</div>
+                <div class="stat-label">网络环境</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="cacheSize">0</div>
+                <div class="stat-label">缓存条目</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="successRate">0%</div>
+                <div class="stat-label">总体成功率</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="activeSources">0</div>
+                <div class="stat-label">可用源数量</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>🔧 控制面板</h2>
+        <div class="controls">
+            <button class="primary" onclick="testAllDomains()">测试所有域名</button>
+            <button onclick="clearAllCache()">清空缓存</button>
+            <button onclick="resetAllStats()">重置统计</button>
+            <button onclick="checkNetworkEnvironment()">检测网络环境</button>
+            <button onclick="refreshStats()">刷新统计</button>
+            <button onclick="toggleLog()">切换日志</button>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>🌐 测试域名</h2>
+        <div class="test-grid" id="testGrid">
+            <!-- 测试项目将动态生成 -->
+        </div>
+    </div>
+
+    <div class="test-section" id="logSection" style="display: none;">
+        <h2>📋 测试日志</h2>
+        <div id="log"></div>
+    </div>
+
+    <script type="module">
+        // 导入favicon工具
+        import { 
+            getFaviconUrl, 
+            getFaviconCacheStats, 
+            cleanupFaviconCache, 
+            resetSourceStats, 
+            forceNetworkCheck 
+        } from './src/utils/favicon-helper.js';
+
+        // 测试域名列表
+        const testDomains = [
+            // 国内常用网站
+            'baidu.com',
+            'taobao.com',
+            'qq.com',
+            'weibo.com',
+            'zhihu.com',
+            'bilibili.com',
+            'douyin.com',
+            'xiaohongshu.com',
+            
+            // 国外常用网站
+            'google.com',
+            'github.com',
+            'stackoverflow.com',
+            'youtube.com',
+            'twitter.com',
+            'facebook.com',
+            'instagram.com',
+            'linkedin.com',
+            
+            // 开发工具
+            'npm.js.org',
+            'nodejs.org',
+            'vuejs.org',
+            'reactjs.org',
+            'angular.io',
+            'svelte.dev',
+            
+            // 其他
+            'microsoft.com',
+            'apple.com',
+            'amazon.com',
+            'netflix.com'
+        ];
+
+        let testResults = new Map();
+        let logVisible = false;
+
+        // 日志函数
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logElement = document.getElementById('log');
+            const prefix = type === 'error' ? '❌' : type === 'success' ? '✅' : type === 'warning' ? '⚠️' : 'ℹ️';
+            logElement.textContent += `[${timestamp}] ${prefix} ${message}\n`;
+            logElement.scrollTop = logElement.scrollHeight;
+        }
+
+        // 切换日志显示
+        window.toggleLog = function() {
+            const logSection = document.getElementById('logSection');
+            logVisible = !logVisible;
+            logSection.style.display = logVisible ? 'block' : 'none';
+        }
+
+        // 初始化测试网格
+        function initTestGrid() {
+            const grid = document.getElementById('testGrid');
+            grid.innerHTML = '';
+            
+            testDomains.forEach(domain => {
+                const item = document.createElement('div');
+                item.className = 'test-item';
+                item.innerHTML = `
+                    <img class="favicon" id="favicon-${domain}" src="/assets/default-favicon.svg" alt="${domain}">
+                    <div class="info">
+                        <div class="domain">${domain}</div>
+                        <div class="status loading" id="status-${domain}">等待测试...</div>
+                    </div>
+                `;
+                grid.appendChild(item);
+            });
+        }
+
+        // 测试单个域名
+        async function testDomain(domain) {
+            const faviconImg = document.getElementById(`favicon-${domain}`);
+            const statusDiv = document.getElementById(`status-${domain}`);
+            
+            statusDiv.textContent = '获取中...';
+            statusDiv.className = 'status loading';
+            
+            const startTime = Date.now();
+            
+            try {
+                const faviconUrl = await getFaviconUrl(domain, 32);
+                const responseTime = Date.now() - startTime;
+                
+                faviconImg.src = faviconUrl;
+                
+                const isDefault = faviconUrl.includes('default-favicon.svg');
+                testResults.set(domain, {
+                    success: !isDefault,
+                    url: faviconUrl,
+                    responseTime: responseTime
+                });
+                
+                if (isDefault) {
+                    statusDiv.textContent = `使用默认图标 (${responseTime}ms)`;
+                    statusDiv.className = 'status error';
+                    log(`${domain}: 使用默认图标 - ${responseTime}ms`, 'warning');
+                } else {
+                    statusDiv.textContent = `获取成功 (${responseTime}ms)`;
+                    statusDiv.className = 'status success';
+                    log(`${domain}: 获取成功 - ${responseTime}ms`, 'success');
+                }
+                
+            } catch (error) {
+                testResults.set(domain, {
+                    success: false,
+                    error: error.message,
+                    responseTime: Date.now() - startTime
+                });
+                
+                statusDiv.textContent = '获取失败';
+                statusDiv.className = 'status error';
+                log(`${domain}: 获取失败 - ${error.message}`, 'error');
+            }
+        }
+
+        // 测试所有域名
+        window.testAllDomains = async function() {
+            log('开始测试所有域名...', 'info');
+            testResults.clear();
+            
+            // 并发测试，但限制并发数量
+            const batchSize = 5;
+            for (let i = 0; i < testDomains.length; i += batchSize) {
+                const batch = testDomains.slice(i, i + batchSize);
+                await Promise.all(batch.map(domain => testDomain(domain)));
+                
+                // 短暂延迟，避免请求过于密集
+                await new Promise(resolve => setTimeout(resolve, 500));
+            }
+            
+            log('所有域名测试完成！', 'success');
+            await refreshStats();
+        }
+
+        // 刷新统计信息
+        window.refreshStats = async function() {
+            try {
+                const stats = getFaviconCacheStats();
+                
+                document.getElementById('networkStatus').textContent = stats.networkStatus.isDomestic ? '国内' : '国际';
+                document.getElementById('cacheSize').textContent = stats.cacheSize;
+                
+                // 计算总体成功率
+                if (stats.sources.length > 0) {
+                    const totalAttempts = stats.sources.reduce((sum, s) => sum + s.attempts, 0);
+                    const totalSuccesses = stats.sources.reduce((sum, s) => sum + s.successes, 0);
+                    const successRate = totalAttempts > 0 ? Math.round((totalSuccesses / totalAttempts) * 100) : 0;
+                    document.getElementById('successRate').textContent = successRate + '%';
+                }
+                
+                const activeSources = stats.sources.filter(s => s.isAvailable).length;
+                document.getElementById('activeSources').textContent = activeSources;
+                
+                log(`统计信息已刷新 - 缓存:${stats.cacheSize}, 可用源:${activeSources}`, 'info');
+                
+            } catch (error) {
+                log(`刷新统计失败: ${error.message}`, 'error');
+            }
+        }
+
+        // 清空缓存
+        window.clearAllCache = function() {
+            if (confirm('确定要清空所有favicon缓存吗？')) {
+                cleanupFaviconCache();
+                log('缓存已清空', 'success');
+                refreshStats();
+            }
+        }
+
+        // 重置统计
+        window.resetAllStats = function() {
+            if (confirm('确定要重置所有统计信息吗？')) {
+                resetSourceStats();
+                log('统计信息已重置', 'success');
+                refreshStats();
+            }
+        }
+
+        // 检测网络环境
+        window.checkNetworkEnvironment = async function() {
+            try {
+                log('正在检测网络环境...', 'info');
+                await forceNetworkCheck();
+                await refreshStats();
+                log('网络环境检测完成', 'success');
+            } catch (error) {
+                log(`网络环境检测失败: ${error.message}`, 'error');
+            }
+        }
+
+        // 页面加载时初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            initTestGrid();
+            refreshStats();
+            log('Favicon测试页面已加载', 'info');
+        });
+    </script>
+</body>
+</html> 

@@ -85,6 +85,7 @@ const menuItems: MenuItem[] = [
   { path: '/admin/dashboard', title: '仪表盘', icon: 'fas fa-tachometer-alt' },
         { path: '/admin/sites', title: '网站管理', icon: 'fas fa-globe' },
       { path: '/admin/categories', title: '分类管理', icon: 'fas fa-folder' },
+      { path: '/admin/favicon-monitor', title: 'Favicon监控', icon: 'fas fa-chart-line' },
       { path: '/admin/settings', title: '系统设置', icon: 'fas fa-cog' }
 ]
 

@@ -74,6 +74,14 @@ const routes: RouteRecordRaw[] = [
         }
       },
       {
+        path: 'favicon-monitor',
+        name: 'AdminFaviconMonitor',
+        component: () => import('@/admin/views/AdminFaviconMonitor.vue'),
+        meta: {
+          title: '后台管理 - Favicon监控'
+        }
+      },
+      {
         path: 'settings',
         name: 'AdminSettings',
         component: () => import('@/admin/views/AdminSettings.vue'),
