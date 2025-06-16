@@ -237,24 +237,5 @@
     "featured": false,
     "createdAt": "2024-01-01T00:00:00Z",
     "updatedAt": "2024-01-01T00:00:00Z"
-  },
-  {
-    "title": "测试",
-    "url": "http://localhost:3004/admin/sites",
-    "description": "无",
-    "categoryPath": [
-      "design-tools",
-      "ui-design",
-      "wireframe"
-    ],
-    "tags": [
-      "测试"
-    ],
-    "icon": "/assets/default-favicon.svg",
-    "domain": "localhost",
-    "featured": false,
-    "id": "",
-    "createdAt": "2025-06-16T11:56:30.689Z",
-    "updatedAt": "2025-06-16T11:56:30.689Z"
   }
 ]
