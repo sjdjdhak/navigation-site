@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <title>导航站</title>
+    <script>
+        // GitHub Pages SPA 路由解决方案
+        // 将路径信息存储在 sessionStorage 中，然后重定向到根路径
+        sessionStorage.setItem('redirect', location.href);
+        location.replace('/navigation-site/');
+    </script>
+</head>
+<body>
+    <div>正在跳转...</div>
+</body>
+</html> 
