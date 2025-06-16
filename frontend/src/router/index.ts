@@ -29,15 +29,12 @@ const routes: RouteRecordRaw[] = [
   },
   // 后台管理路由
   {
-    path: '/admin',
-    redirect: '/admin/dashboard'
-  },
-  {
     path: '/admin/login',
     name: 'AdminLogin',
     component: () => import('@/admin/views/AdminLogin.vue'),
     meta: {
       title: '后台管理 - 登录',
+      requiresAuth: false,
       requiresGuest: true
     }
   },
@@ -48,6 +45,10 @@ const routes: RouteRecordRaw[] = [
       requiresAuth: true
     },
     children: [
+      {
+        path: '',
+        redirect: '/admin/dashboard'
+      },
       {
         path: 'dashboard',
         name: 'AdminDashboard',
@@ -70,14 +71,6 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/admin/views/AdminCategories.vue'),
         meta: {
           title: '后台管理 - 分类管理'
-        }
-      },
-      {
-        path: 'tags',
-        name: 'AdminTags',
-        component: () => import('@/admin/views/AdminTags.vue'),
-        meta: {
-          title: '后台管理 - 标签管理'
         }
       },
       {
@@ -112,47 +105,40 @@ const router = createRouter({
   }
 })
 
-// 检查认证状态
-const checkAuth = (): boolean => {
-  // 检查测试模式认证
-  const adminMode = localStorage.getItem('admin_mode') || sessionStorage.getItem('admin_mode')
-  
-  if (adminMode === 'test') {
-    const adminUser = localStorage.getItem('admin_user') || sessionStorage.getItem('admin_user')
-    const loginTime = localStorage.getItem('admin_login_time') || sessionStorage.getItem('admin_login_time')
-    
-    // 检查测试模式登录是否有效（24小时内有效）
-    if (adminUser && loginTime) {
-      const loginDate = new Date(loginTime)
-      const now = new Date()
-      const hoursDiff = (now.getTime() - loginDate.getTime()) / (1000 * 60 * 60)
-      
-      if (hoursDiff < 24) {
-        return true
-      } else {
-        // 登录已过期，清除认证信息
-        localStorage.removeItem('admin_mode')
-        localStorage.removeItem('admin_user')
-        localStorage.removeItem('admin_login_time')
-        sessionStorage.removeItem('admin_mode')
-        sessionStorage.removeItem('admin_user')
-        sessionStorage.removeItem('admin_login_time')
-      }
-    }
+// 动态导入认证服务（避免循环依赖）
+let authService: any = null
+const getAuthService = async () => {
+  if (!authService) {
+    const module = await import('@/admin/services/auth-service')
+    authService = module.authService
   }
+  return authService
+}
+
+// 检查认证状态
+const checkAuth = async (): Promise<boolean> => {
+  // 只检查GitHub模式认证（已移除测试模式）
+  const adminMode = localStorage.getItem('admin_mode')
   
-  // 检查GitHub模式认证
   if (adminMode === 'github') {
-    const token = localStorage.getItem('github_token') || sessionStorage.getItem('github_token')
-    const repository = localStorage.getItem('github_repository') || sessionStorage.getItem('github_repository')
-    return !!(token && repository)
+    try {
+      const authSvc = await getAuthService()
+      const authState = authSvc.getState()
+      
+      if (authState.isAuthenticated) {
+        const isValid = await authSvc.checkAuth()
+        return isValid
+      }
+    } catch (error) {
+      console.error('检查GitHub认证状态失败:', error)
+    }
   }
   
   return false
 }
 
 // 路由守卫
-router.beforeEach((to, from, next) => {
+router.beforeEach(async (to, from, next) => {
   // 设置页面标题
   if (to.meta?.title) {
     document.title = to.meta.title as string
@@ -160,7 +146,9 @@ router.beforeEach((to, from, next) => {
   
   // 检查是否需要认证
   if (to.meta?.requiresAuth) {
-    if (!checkAuth()) {
+    const isAuthenticated = await checkAuth()
+    
+    if (!isAuthenticated) {
       next('/admin/login')
       return
     }
@@ -168,7 +156,9 @@ router.beforeEach((to, from, next) => {
   
   // 检查是否需要游客状态（已登录用户不能访问登录页）
   if (to.meta?.requiresGuest) {
-    if (checkAuth()) {
+    const isAuthenticated = await checkAuth()
+    
+    if (isAuthenticated) {
       next('/admin/dashboard')
       return
     }

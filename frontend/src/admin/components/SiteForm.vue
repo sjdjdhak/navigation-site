@@ -42,32 +42,7 @@
         />
       </el-form-item>
 
-      <el-form-item label="标签" prop="tags">
-        <el-select
-          v-model="formData.tags"
-          multiple
-          filterable
-          allow-create
-          default-first-option
-          placeholder="请选择或输入标签"
-          style="width: 100%"
-        >
-          <el-option
-            v-for="option in tagOptions"
-            :key="option.value"
-            :label="option.label"
-            :value="option.value"
-          >
-            <span>{{ option.label }}</span>
-            <el-tag
-              v-if="option.color"
-              :color="option.color"
-              size="small"
-              style="margin-left: 8px;"
-            />
-          </el-option>
-        </el-select>
-      </el-form-item>
+
 
       <el-form-item label="网站图标">
         <div class="icon-preview">
@@ -116,8 +91,8 @@
 import { ref, reactive, computed, watch, onMounted } from 'vue'
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
 import { Link } from '@element-plus/icons-vue'
-import { dataService, type Site, type Category } from '../services/data-service'
-import { tagService } from '../services/tag-service'
+import { dataService, type Site, type Category } from '@/admin/services/data-service'
+import { getFaviconUrl } from '@/utils/favicon-helper'
 
 interface Props {
   site?: Site | null
@@ -140,7 +115,6 @@ const formRef = ref<FormInstance>()
 const loading = ref(false)
 const iconLoading = ref(false)
 const categories = ref<Category[]>([])
-const tagOptions = ref<{ label: string; value: string; color?: string }[]>([])
 
 const isEdit = computed(() => !!props.site)
 
@@ -150,7 +124,6 @@ const formData = reactive({
   url: '',
   description: '',
   categoryPath: [] as string[],
-  tags: [] as string[],
   icon: '',
   domain: '',
   featured: false
@@ -211,7 +184,6 @@ const resetForm = () => {
     url: '',
     description: '',
     categoryPath: [],
-    tags: [],
     icon: '',
     domain: '',
     featured: false
@@ -227,7 +199,6 @@ watch(() => props.site, (newSite) => {
       url: newSite.url,
       description: newSite.description,
       categoryPath: [...newSite.categoryPath],
-      tags: [...newSite.tags],
       icon: newSite.icon,
       domain: newSite.domain,
       featured: newSite.featured
@@ -245,14 +216,15 @@ const handleTitleBlur = () => {
 }
 
 // 处理URL失焦
-const handleUrlBlur = () => {
+const handleUrlBlur = async () => {
   if (formData.url) {
     try {
       const domain = dataService.extractDomain(formData.url)
       formData.domain = domain
       
       if (!formData.icon) {
-        formData.icon = dataService.getFaviconUrl(domain)
+        // 使用新的多源favicon获取方法
+        formData.icon = await getFaviconUrl(domain)
       }
     } catch (error) {
       console.error('解析URL失败:', error)
@@ -266,9 +238,11 @@ const refreshIcon = async () => {
   
   iconLoading.value = true
   try {
-    formData.icon = dataService.getFaviconUrl(formData.domain, 64)
+    // 使用新的多源favicon获取方法
+    formData.icon = await getFaviconUrl(formData.domain, 64)
     ElMessage.success('图标已刷新')
   } catch (error) {
+    console.error('刷新图标失败:', error)
     ElMessage.error('刷新图标失败')
   } finally {
     iconLoading.value = false
@@ -294,7 +268,7 @@ const handleSubmit = async () => {
       url: formData.url.trim(),
       description: formData.description.trim(),
       categoryPath: [...formData.categoryPath],
-      tags: [...formData.tags],
+      tags: [], // 设置为空数组，保持数据结构兼容性
       icon: formData.icon,
       domain: formData.domain,
       featured: formData.featured
@@ -324,19 +298,8 @@ const loadCategories = async () => {
   }
 }
 
-// 加载标签选项
-const loadTagOptions = async () => {
-  try {
-    tagOptions.value = await tagService.getTagOptions()
-  } catch (error) {
-    console.error('加载标签失败:', error)
-    ElMessage.error('加载标签失败')
-  }
-}
-
 onMounted(() => {
   loadCategories()
-  loadTagOptions()
 })
 </script>
 

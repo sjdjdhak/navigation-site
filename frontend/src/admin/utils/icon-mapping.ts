@@ -144,4 +144,4 @@ export function mapFaIconToElement(faIcon?: string): string {
 }
 
 // 重新导出统一的图标描述函数
-export { getIconDescription } from './icon-config' 
+export { getIconDescription } from '@/admin/utils/icon-config' 

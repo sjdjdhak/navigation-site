@@ -5,11 +5,6 @@
       <div class="sidebar-header">
         <h1 v-if="!sidebarCollapsed">后台管理</h1>
         <h1 v-else>管理</h1>
-        <div v-if="!sidebarCollapsed" class="mode-indicator">
-          <span :class="['mode-badge', adminMode]">
-            {{ adminMode === 'test' ? '测试模式' : 'GitHub模式' }}
-          </span>
-        </div>
       </div>
       
       <nav class="sidebar-nav">
@@ -70,7 +65,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { authService } from '../services/auth-service'
+import { authService } from '@/admin/services/auth-service'
 
 interface MenuItem {
   path: string
@@ -82,17 +77,15 @@ const router = useRouter()
 const route = useRoute()
 
 const sidebarCollapsed = ref(false)
-const adminMode = ref<'test' | 'github'>('github')
 const currentUser = ref('')
 const loginTime = ref('')
 const authState = ref(authService.getState())
 
 const menuItems: MenuItem[] = [
   { path: '/admin/dashboard', title: '仪表盘', icon: 'fas fa-tachometer-alt' },
-  { path: '/admin/sites', title: '网站管理', icon: 'fas fa-globe' },
-  { path: '/admin/categories', title: '分类管理', icon: 'fas fa-folder' },
-  { path: '/admin/tags', title: '标签管理', icon: 'fas fa-tags' },
-  { path: '/admin/settings', title: '系统设置', icon: 'fas fa-cog' }
+        { path: '/admin/sites', title: '网站管理', icon: 'fas fa-globe' },
+      { path: '/admin/categories', title: '分类管理', icon: 'fas fa-folder' },
+      { path: '/admin/settings', title: '系统设置', icon: 'fas fa-cog' }
 ]
 
 const currentPageTitle = computed(() => {
@@ -122,15 +115,9 @@ const emit = defineEmits<{
 
 // 初始化用户信息
 const initUserInfo = () => {
-  const testMode = localStorage.getItem('admin_mode')
   const time = localStorage.getItem('admin_login_time')
   
-  if (testMode === 'test') {
-    adminMode.value = 'test'
-    currentUser.value = localStorage.getItem('admin_user') || 'admin'
-    loginTime.value = time || ''
-  } else if (authState.value.isAuthenticated) {
-    adminMode.value = 'github'
+  if (authState.value.isAuthenticated) {
     currentUser.value = authState.value.user?.login || authState.value.config?.owner || 'GitHub用户'
     loginTime.value = time || ''
   }
@@ -145,11 +132,6 @@ const goToFrontend = () => {
 }
 
 const handleLogout = () => {
-  // 清除测试模式认证信息
-  localStorage.removeItem('admin_mode')
-  localStorage.removeItem('admin_user')
-  localStorage.removeItem('admin_login_time')
-  
   // 清除GitHub认证信息
   authService.logout()
   
@@ -207,27 +189,7 @@ onUnmounted(() => {
   }
 }
 
-.mode-indicator {
-  margin-top: 8px;
-}
 
-.mode-badge {
-  display: inline-block;
-  padding: 2px 8px;
-  border-radius: 12px;
-  font-size: 10px;
-  font-weight: 500;
-  
-  &.test {
-    background-color: #f39c12;
-    color: white;
-  }
-  
-  &.github {
-    background-color: #27ae60;
-    color: white;
-  }
-}
 
 .sidebar-nav {
   padding: 20px 0;

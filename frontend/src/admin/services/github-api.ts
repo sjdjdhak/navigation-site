@@ -84,8 +84,8 @@ class GitHubApiService {
 
       const data: GitHubFile = await response.json()
       
-      // 解码base64内容
-      const content = atob(data.content.replace(/\s/g, ''))
+      // 正确解码包含UTF-8字符的base64内容
+      const content = this.decodeBase64UTF8(data.content.replace(/\s/g, ''))
       return {
         ...data,
         content: JSON.parse(content)
@@ -93,6 +93,42 @@ class GitHubApiService {
     } catch (error) {
       console.error('获取文件失败:', error)
       throw error
+    }
+  }
+
+  // UTF-8安全的Base64解码
+  private decodeBase64UTF8(base64: string): string {
+    try {
+      // 方法1: 使用TextDecoder (现代浏览器推荐)
+      if (typeof TextDecoder !== 'undefined') {
+        const bytes = Uint8Array.from(atob(base64), c => c.charCodeAt(0))
+        return new TextDecoder('utf-8').decode(bytes)
+      }
+      
+      // 方法2: 传统兼容方法
+      return decodeURIComponent(escape(atob(base64)))
+    } catch (error) {
+      console.error('Base64解码失败:', error)
+      // 兜底方案：尝试直接解码
+      return atob(base64)
+    }
+  }
+
+  // UTF-8安全的Base64编码
+  private encodeBase64UTF8(text: string): string {
+    try {
+      // 方法1: 使用TextEncoder (现代浏览器推荐)
+      if (typeof TextEncoder !== 'undefined') {
+        const bytes = new TextEncoder().encode(text)
+        return btoa(String.fromCharCode(...bytes))
+      }
+      
+      // 方法2: 传统兼容方法
+      return btoa(unescape(encodeURIComponent(text)))
+    } catch (error) {
+      console.error('Base64编码失败:', error)
+      // 兜底方案：尝试直接编码
+      return btoa(text)
     }
   }
 
@@ -112,7 +148,7 @@ class GitHubApiService {
 
       const body = {
         message,
-        content: btoa(JSON.stringify(content, null, 2)),
+        content: this.encodeBase64UTF8(JSON.stringify(content, null, 2)),
         branch: this.config!.branch,
         ...(sha && { sha })
       }

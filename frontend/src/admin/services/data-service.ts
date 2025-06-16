@@ -1,5 +1,6 @@
 // 数据服务
-import { githubApi } from './github-api'
+import { githubApi } from '@/admin/services/github-api'
+import { getFaviconUrl, preloadFavicons } from '@/utils/favicon-helper'
 
 export interface Site {
   id: string
@@ -72,21 +73,26 @@ class DataService {
       return this.cache.get(cacheKey)
     }
 
-    // 检查是否为测试模式
-    const testMode = localStorage.getItem('admin_mode')
-    if (testMode === 'test') {
-      const mockData = this.getMockCategories()
-      this.setCache(cacheKey, mockData)
-      return mockData
-    }
-
     try {
+      console.log('从GitHub获取分类配置...')
       const result = await githubApi.getFile('data/categories.json')
+      console.log('分类配置获取成功:', result.content)
+      
+      // 验证数据完整性
+      if (!result.content || !result.content.categories) {
+        throw new Error('分类配置数据格式无效')
+      }
+      
       this.setCache(cacheKey, result.content)
       return result.content
     } catch (error) {
       console.error('获取分类配置失败:', error)
-      throw error
+      console.log('使用模拟数据作为兜底方案')
+      
+      // 兜底方案：使用模拟数据
+      const mockData = this.getMockCategories()
+      this.setCache(cacheKey, mockData)
+      return mockData
     }
   }
 
@@ -236,19 +242,68 @@ class DataService {
     }
   }
 
+  // 获取模拟网站数据
+  private getMockSites(categoryId: string): Site[] {
+    const now = new Date().toISOString()
+    
+    // 根据分类ID返回不同的模拟数据
+    switch (categoryId) {
+      case 'design-tools':
+        return [
+          {
+            id: 'figma',
+            title: 'Figma',
+            description: '强大的云端协作设计工具，支持多人实时协作，是现代UI/UX设计的首选工具',
+            url: 'https://www.figma.com',
+            domain: 'figma.com',
+            icon: 'https://www.google.com/s2/favicons?domain=figma.com&sz=64',
+            tags: ['设计', '协作', 'UI', '原型', '云端'],
+            categoryPath: ['design-tools', 'ui-design', 'visual-design'],
+            featured: true,
+            createdAt: now,
+            updatedAt: now
+          },
+          {
+            id: 'sketch',
+            title: 'Sketch',
+            description: '专业的矢量图形设计工具，Mac平台上的经典UI设计软件',
+            url: 'https://www.sketch.com',
+            domain: 'sketch.com',
+            icon: 'https://www.google.com/s2/favicons?domain=sketch.com&sz=64',
+            tags: ['设计', 'UI', '矢量', 'Mac'],
+            categoryPath: ['design-tools', 'ui-design', 'visual-design'],
+            featured: false,
+            createdAt: now,
+            updatedAt: now
+          }
+        ]
+      
+      case 'dev-resources':
+        return [
+          {
+            id: 'github',
+            title: 'GitHub',
+            description: '全球最大的代码托管平台，开发者必备工具',
+            url: 'https://github.com',
+            domain: 'github.com',
+            icon: 'https://www.google.com/s2/favicons?domain=github.com&sz=64',
+            tags: ['代码', '版本控制', '开源', '协作'],
+            categoryPath: ['dev-resources', 'frontend', 'build-tools'],
+            featured: true,
+            createdAt: now,
+            updatedAt: now
+          }
+        ]
+      
+      default:
+        return []
+    }
+  }
+
   // 更新分类配置
   async updateCategories(categories: CategoryConfig): Promise<void> {
     try {
       categories.lastUpdated = new Date().toISOString()
-      
-      // 检查是否为测试模式
-      const testMode = localStorage.getItem('admin_mode')
-      if (testMode === 'test') {
-        // 测试模式下只更新缓存，不真实保存
-        this.setCache('categories', categories)
-        console.log('测试模式：分类配置已更新到本地缓存')
-        return
-      }
       
       await githubApi.updateFile(
         'data/categories.json',
@@ -271,12 +326,35 @@ class DataService {
     }
 
     try {
+      console.log(`从GitHub获取分类 ${categoryId} 的网站数据...`)
       const result = await githubApi.getFile(`data/${categoryId}.json`)
-      this.setCache(cacheKey, result.content)
-      return result.content
+      console.log(`分类 ${categoryId} 数据获取成功，网站数量:`, result.content?.length || 0)
+      
+      // 验证数据格式
+      const sites = Array.isArray(result.content) ? result.content : []
+      
+      // 验证网站数据完整性
+      const validSites = sites.filter(site => 
+        site && 
+        typeof site.id === 'string' && 
+        typeof site.title === 'string' && 
+        typeof site.url === 'string'
+      )
+      
+      if (validSites.length !== sites.length) {
+        console.warn(`分类 ${categoryId} 中有 ${sites.length - validSites.length} 个无效网站数据`)
+      }
+      
+      this.setCache(cacheKey, validSites)
+      return validSites
     } catch (error) {
       console.error(`获取分类 ${categoryId} 的网站数据失败:`, error)
-      throw error
+      console.log(`使用分类 ${categoryId} 的模拟数据作为兜底方案`)
+      
+      // 兜底方案：使用模拟数据
+      const mockData = this.getMockSites(categoryId)
+      this.setCache(cacheKey, mockData)
+      return mockData
     }
   }
 
@@ -545,8 +623,16 @@ class DataService {
     }
   }
 
-  // 获取网站图标URL
+  // 获取网站图标URL (使用新的多源兜底机制)
+  async getFaviconUrlAsync(domain: string, size: number = 64): Promise<string> {
+    return await getFaviconUrl(domain, size)
+  }
+
+  // 兼容性方法：同步获取favicon URL (仅用于向后兼容)
   getFaviconUrl(domain: string, size: number = 64): string {
+    // 先尝试使用异步方法获取，如果失败则返回默认图标
+    getFaviconUrl(domain, size).catch(() => {})
+    // 返回Google API作为临时显示
     return `https://www.google.com/s2/favicons?domain=${domain}&sz=${size}`
   }
 

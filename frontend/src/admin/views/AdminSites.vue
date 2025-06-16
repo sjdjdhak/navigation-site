@@ -105,27 +105,7 @@
           </template>
         </el-table-column>
 
-        <el-table-column label="标签" width="200">
-          <template #default="{ row }">
-            <div class="tags">
-              <el-tag
-                v-for="tag in row.tags.slice(0, 3)"
-                :key="tag"
-                size="small"
-                type="info"
-              >
-                {{ tag }}
-              </el-tag>
-              <el-tag
-                v-if="row.tags.length > 3"
-                size="small"
-                type="info"
-              >
-                +{{ row.tags.length - 3 }}
-              </el-tag>
-            </div>
-          </template>
-        </el-table-column>
+
 
         <el-table-column label="更新时间" width="150">
           <template #default="{ row }">
@@ -186,9 +166,9 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Delete, Refresh, Search } from '@element-plus/icons-vue'
-import { dataService, type Site, type Category } from '../services/data-service'
-import { authService } from '../services/auth-service'
-import SiteForm from '../components/SiteForm.vue'
+import { dataService, type Site, type Category } from '@/admin/services/data-service'
+import { authService } from '@/admin/services/auth-service'
+import SiteForm from '@/admin/components/SiteForm.vue'
 
 // 响应式数据
 const loading = ref(false)
@@ -223,7 +203,7 @@ const filteredSites = computed(() => {
   if (searchQuery.value) {
     const query = searchQuery.value.toLowerCase()
     result = result.filter(site => {
-      const searchText = `${site.title} ${site.description} ${site.tags.join(' ')}`.toLowerCase()
+      const searchText = `${site.title} ${site.description}`.toLowerCase()
       return searchText.includes(query)
     })
   }
@@ -308,10 +288,18 @@ const formatDate = (dateString: string): string => {
   return new Date(dateString).toLocaleDateString('zh-CN')
 }
 
-// 处理图标加载错误
-const handleIconError = (event: Event, site: Site) => {
+// 处理图标加载错误  
+const handleIconError = async (event: Event, site: Site) => {
   const img = event.target as HTMLImageElement
-  img.src = dataService.getFaviconUrl(site.domain, 32)
+  try {
+    // 使用新的多源favicon获取方法
+    const { getFaviconUrl } = await import('@/utils/favicon-helper')
+    img.src = await getFaviconUrl(site.domain, 32)
+  } catch (error) {
+    console.error('获取备用图标失败:', error)
+    // 最终兜底：使用默认图标
+    img.src = '/assets/default-favicon.svg'
+  }
 }
 
 // 处理选择变化
@@ -562,11 +550,7 @@ onMounted(() => {
   gap: 4px;
 }
 
-.tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-}
+
 
 .pagination {
   padding: 20px;

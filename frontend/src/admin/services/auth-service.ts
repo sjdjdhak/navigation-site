@@ -1,5 +1,5 @@
 // 认证服务
-import { githubApi, type GitHubConfig } from './github-api'
+import { githubApi, type GitHubConfig } from '@/admin/services/github-api'
 
 export interface AuthState {
   isAuthenticated: boolean
@@ -88,6 +88,10 @@ class AuthService {
         }
 
         this.state.user = user
+        
+        // 设置GitHub模式标识
+        localStorage.setItem('admin_mode', 'github')
+        localStorage.setItem('admin_login_time', new Date().toISOString())
       }
 
       this.state.config = config
@@ -115,6 +119,9 @@ class AuthService {
     }
     
     localStorage.removeItem(this.STORAGE_KEY)
+    // 清除GitHub模式状态标识
+    localStorage.removeItem('admin_mode')
+    localStorage.removeItem('admin_login_time')
     this.notify()
   }
 
@@ -130,14 +137,7 @@ class AuthService {
 
   // 检查认证状态
   async checkAuth(): Promise<boolean> {
-    // 检查测试模式
-    const testMode = localStorage.getItem('admin_mode')
-    if (testMode === 'test') {
-      const user = localStorage.getItem('admin_user')
-      return !!user // 如果有测试用户信息，则认为已认证
-    }
-
-    // 检查GitHub模式
+    // 只检查GitHub模式（已移除测试模式）
     if (!this.state.isAuthenticated || !this.state.config) {
       return false
     }

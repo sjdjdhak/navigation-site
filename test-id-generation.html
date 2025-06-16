@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>分类ID生成测试</title>
+    <style>
+        body {
+            font-family: 'Microsoft YaHei', sans-serif;
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #555;
+        }
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        input:focus {
+            outline: none;
+            border-color: #409eff;
+            box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.2);
+        }
+        .suggestions {
+            margin-top: 10px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            border: 1px solid #e9ecef;
+        }
+        .suggestion-label {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 10px;
+            font-weight: 500;
+        }
+        .tag {
+            display: inline-block;
+            padding: 6px 12px;
+            margin: 4px;
+            background: #e7f3ff;
+            border: 1px solid #b3d8ff;
+            color: #409eff;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 13px;
+        }
+        .tag:hover {
+            background: #409eff;
+            color: white;
+            transform: translateY(-1px);
+        }
+        .tag.selected {
+            background: #409eff;
+            color: white;
+        }
+        .validation {
+            margin-top: 8px;
+            padding: 8px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        .validation.success {
+            background: #f0f9ff;
+            border: 1px solid #b3e5fc;
+            color: #00695c;
+        }
+        .validation.error {
+            background: #fff3f3;
+            border: 1px solid #ffcdd2;
+            color: #d32f2f;
+        }
+        .help-text {
+            margin-top: 6px;
+            font-size: 12px;
+            color: #999;
+        }
+        .demo-section {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 6px;
+        }
+        .demo-title {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #333;
+        }
+        .demo-item {
+            margin-bottom: 10px;
+            padding: 8px;
+            background: white;
+            border-radius: 4px;
+            border-left: 3px solid #409eff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 自定义分类ID功能演示</h1>
+        
+        <div class="form-group">
+            <label for="categoryName">分类名称</label>
+            <input type="text" id="categoryName" placeholder="请输入分类名称，如：前端开发、UI设计等">
+        </div>
+        
+        <div class="form-group">
+            <label for="categoryId">分类ID</label>
+            <input type="text" id="categoryId" placeholder="请输入自定义分类ID或点击下方建议">
+            <div id="suggestions" class="suggestions" style="display: none;">
+                <div class="suggestion-label">建议的ID：</div>
+                <div id="suggestionsContainer"></div>
+            </div>
+            <div id="validation" class="validation" style="display: none;"></div>
+            <div class="help-text">ID只能包含小写字母、数字和连字符(-)，用于URL和API调用</div>
+        </div>
+        
+        <div class="demo-section">
+            <div class="demo-title">🎯 功能特点：</div>
+            <div class="demo-item">✅ <strong>智能建议</strong>：根据中文名称自动生成多个友好的ID选项</div>
+            <div class="demo-item">✅ <strong>中文支持</strong>：中文自动转换为拼音，生成规范的英文ID</div>
+            <div class="demo-item">✅ <strong>格式验证</strong>：实时检查ID格式、长度和唯一性</div>
+            <div class="demo-item">✅ <strong>手动编辑</strong>：支持完全自定义，不受建议限制</div>
+            <div class="demo-item">✅ <strong>冲突处理</strong>：自动检测重复ID并提示</div>
+        </div>
+        
+        <div class="demo-section">
+            <div class="demo-title">📝 使用说明：</div>
+            <div class="demo-item">1. 输入分类名称，系统会自动生成建议ID</div>
+            <div class="demo-item">2. 点击任意建议标签快速选择</div>
+            <div class="demo-item">3. 也可以手动输入完全自定义的ID</div>
+            <div class="demo-item">4. 系统会实时验证ID的格式和唯一性</div>
+        </div>
+    </div>
+
+    <script>
+        // 中文转拼音映射表
+        const pinyinMap = {
+            '设': 'she', '计': 'ji', '开': 'kai', '发': 'fa', '编': 'bian', '程': 'cheng',
+            '前': 'qian', '端': 'duan', '后': 'hou', '移': 'yi', '动': 'dong', '网': 'wang',
+            '站': 'zhan', '应': 'ying', '用': 'yong', '工': 'gong', '具': 'ju', '学': 'xue',
+            '习': 'xi', '教': 'jiao', '娱': 'yu', '乐': 'yue', '游': 'you',
+            '戏': 'xi2', '音': 'yin', '视': 'shi', '频': 'pin', '图': 'tu',
+            '片': 'pian', '社': 'she2', '交': 'jiao2', '购': 'gou', '物': 'wu', '金': 'jin',
+            '融': 'rong', '财': 'cai', '经': 'jing', '新': 'xin', '闻': 'wen', '资': 'zi',
+            '讯': 'xun', '科': 'ke', '技': 'ji2', '数': 'shu', '码': 'ma', '电': 'dian',
+            '脑': 'nao', '手': 'shou', '机': 'ji3', '软': 'ruan', '件': 'jian', '硬': 'ying',
+            '办': 'ban', '公': 'gong2', '生': 'sheng', '活': 'huo', '服': 'fu', '务': 'wu2',
+            '旅': 'lv', '美': 'mei', '食': 'shi2', '健': 'jian2', '康': 'kang',
+            '体': 'ti', '育': 'yu2', '运': 'yun', '汽': 'qi', '车': 'che', '房': 'fang',
+            '产': 'chan', '装': 'zhuang', '修': 'xiu', '时': 'shi3', '尚': 'shang', '母': 'mu',
+            '婴': 'ying2', '宠': 'chong', '花': 'hua', '卉': 'hui', '摄': 'she3', '影': 'ying3'
+        };
+
+        // 模拟已存在的ID列表
+        const existingIds = ['frontend', 'backend', 'design', 'mobile', 'tools'];
+
+        // 中文转拼音
+        function convertToPinyin(text) {
+            return text.split('').map(char => pinyinMap[char] || char).join('');
+        }
+
+        // 生成友好的ID
+        function generateFriendlyId(name) {
+            let converted = convertToPinyin(name);
+            converted = converted.toLowerCase().replace(/[^a-z0-9\s-]/g, '');
+            return converted.replace(/\s+/g, '-').replace(/-+/g, '-').replace(/^-+|-+$/g, '');
+        }
+
+        // 生成建议ID
+        function generateSuggestions(name) {
+            if (!name.trim()) return [];
+            
+            const suggestions = [];
+            const basicId = generateFriendlyId(name);
+            
+            if (basicId) suggestions.push(basicId);
+            
+            // 缩写版本
+            const words = name.split(/\s+/);
+            if (words.length > 1) {
+                const abbreviation = words.map(word => {
+                    const firstChar = word.charAt(0);
+                    return pinyinMap[firstChar] || firstChar.toLowerCase();
+                }).join('');
+                if (abbreviation) suggestions.push(abbreviation);
+            }
+            
+            // 简短版本
+            if (basicId && basicId.length > 8) {
+                const shortVersion = basicId.split('-')[0];
+                if (shortVersion && shortVersion.length >= 3) {
+                    suggestions.push(shortVersion);
+                }
+            }
+            
+            // 添加编号版本
+            if (basicId) {
+                suggestions.push(`${basicId}-1`);
+                suggestions.push(`${basicId}-v1`);
+            }
+            
+            return [...new Set(suggestions)].filter(Boolean).slice(0, 6);
+        }
+
+        // 验证ID
+        function validateId(id) {
+            if (!id) return { valid: true, message: '' };
+            
+            const formatRegex = /^[a-z0-9-]+$/;
+            if (!formatRegex.test(id)) {
+                return { valid: false, message: 'ID只能包含小写字母、数字和连字符(-)' };
+            }
+            
+            if (id.length < 2) {
+                return { valid: false, message: 'ID长度至少为2个字符' };
+            }
+            
+            if (id.length > 50) {
+                return { valid: false, message: 'ID长度不能超过50个字符' };
+            }
+            
+            if (id.startsWith('-') || id.endsWith('-') || id.includes('--')) {
+                return { valid: false, message: 'ID不能以连字符开头或结尾，也不能包含连续的连字符' };
+            }
+            
+            if (existingIds.includes(id)) {
+                return { valid: false, message: '该ID已存在，请选择其他ID' };
+            }
+            
+            return { valid: true, message: 'ID格式正确且唯一' };
+        }
+
+        // DOM 元素
+        const nameInput = document.getElementById('categoryName');
+        const idInput = document.getElementById('categoryId');
+        const suggestionsDiv = document.getElementById('suggestions');
+        const suggestionsContainer = document.getElementById('suggestionsContainer');
+        const validationDiv = document.getElementById('validation');
+
+        // 名称输入事件
+        nameInput.addEventListener('input', function() {
+            const name = this.value.trim();
+            if (name) {
+                const suggestions = generateSuggestions(name);
+                displaySuggestions(suggestions);
+                
+                // 如果ID为空，自动选择第一个建议
+                if (!idInput.value && suggestions.length > 0) {
+                    idInput.value = suggestions[0];
+                    validateIdInput();
+                }
+            } else {
+                hideSuggestions();
+            }
+        });
+
+        // ID输入事件
+        idInput.addEventListener('input', validateIdInput);
+
+        // 显示建议
+        function displaySuggestions(suggestions) {
+            if (suggestions.length === 0) {
+                hideSuggestions();
+                return;
+            }
+            
+            suggestionsContainer.innerHTML = suggestions.map(suggestion => 
+                `<span class="tag" onclick="selectSuggestion('${suggestion}')">${suggestion}</span>`
+            ).join('');
+            
+            suggestionsDiv.style.display = 'block';
+        }
+
+        // 隐藏建议
+        function hideSuggestions() {
+            suggestionsDiv.style.display = 'none';
+        }
+
+        // 选择建议
+        function selectSuggestion(suggestion) {
+            idInput.value = suggestion;
+            validateIdInput();
+            
+            // 更新选中状态
+            document.querySelectorAll('.tag').forEach(tag => {
+                tag.classList.toggle('selected', tag.textContent === suggestion);
+            });
+        }
+
+        // 验证ID输入
+        function validateIdInput() {
+            const id = idInput.value.trim();
+            const result = validateId(id);
+            
+            if (!id) {
+                validationDiv.style.display = 'none';
+                return;
+            }
+            
+            validationDiv.style.display = 'block';
+            validationDiv.className = `validation ${result.valid ? 'success' : 'error'}`;
+            validationDiv.textContent = result.message;
+        }
+
+        // 初始化示例
+        window.addEventListener('load', function() {
+            // 可以预设一些示例
+            setTimeout(() => {
+                nameInput.value = '前端开发';
+                nameInput.dispatchEvent(new Event('input'));
+            }, 1000);
+        });
+    </script>
+</body>
+</html> 

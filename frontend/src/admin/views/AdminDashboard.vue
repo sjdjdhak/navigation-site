@@ -109,8 +109,8 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import { dataService } from '../services/data-service'
-import { authService } from '../services/auth-service'
+import { dataService } from '@/admin/services/data-service'
+import { authService } from '@/admin/services/auth-service'
 
 interface Stats {
   totalSites: number
@@ -143,18 +143,6 @@ const loadStats = async () => {
     
     // 检查认证状态
     const authState = authService.getState()
-    const testMode = localStorage.getItem('admin_mode')
-    
-    if (testMode === 'test') {
-      // 测试模式使用模拟数据
-      stats.value = {
-        totalSites: 156,
-        totalCategories: 12,
-        featuredSites: 24,
-        lastUpdate: '刚刚'
-      }
-      return
-    }
     
     if (!authState.isAuthenticated) {
       ElMessage.warning('请先登录')

@@ -1,0 +1,14 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- 背景圆形 -->
+  <circle cx="32" cy="32" r="30" fill="#667eea" stroke="#5a67d8" stroke-width="2"/>
+  
+  <!-- 网站图标 -->
+  <path d="M20 20h24v4H20v-4zm0 8h24v4H20v-4zm0 8h16v4H20v-4z" fill="white"/>
+  
+  <!-- 装饰点 -->
+  <circle cx="50" cy="14" r="3" fill="#ffd700"/>
+  <circle cx="14" cy="50" r="2" fill="#ff6b6b"/>
+  
+  <!-- 边框装饰 -->
+  <rect x="16" y="16" width="32" height="32" fill="none" stroke="white" stroke-width="1" opacity="0.3" rx="2"/>
+</svg> 

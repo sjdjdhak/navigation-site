@@ -119,8 +119,8 @@ import {
   SuccessFilled,
   CircleClose
 } from '@element-plus/icons-vue'
-import type { Category } from '../services/data-service'
-import { getIconOptions } from '../utils/icon-config'
+import type { Category } from '@/admin/services/data-service'
+import { getIconOptions } from '@/admin/utils/icon-config'
 
 interface Props {
   category?: Category | null

@@ -39,28 +39,35 @@
             <h3 class="card-title">{{ website.title }}</h3>
             <div class="card-url">{{ website.domain }}</div>
           </div>
-          <div v-if="website.featured" class="featured-badge">
-            <i class="fas fa-star"></i>
+          <div class="card-badges">
+            <CategoryTag 
+              :category-path="website.categoryPath"
+              :clickable="true"
+              :show-icon="false"
+              size="small"
+              @click="handleCategoryClick"
+            />
+            <div v-if="website.featured" class="featured-badge">
+              <i class="fas fa-star"></i>
+            </div>
           </div>
         </div>
         
-        <p class="card-desc">{{ website.description }}</p>
+                <p class="card-desc">{{ website.description }}</p>
         
+        <!-- 网站标签 -->
         <div class="card-tags">
           <span 
-            v-for="tag in website.tags.slice(0, 4)" 
+            v-for="tag in website.tags" 
             :key="tag"
             class="tag"
+            @click.stop="handleTagClick(tag)"
           >
             {{ tag }}
           </span>
-          <span 
-            v-if="website.tags.length > 4" 
-            class="tag tag-more"
-          >
-            +{{ website.tags.length - 4 }}
-          </span>
         </div>
+        
+
         
         <!-- 波纹效果 -->
         <div class="ripple-container"></div>
@@ -72,6 +79,8 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import type { Website } from '@/types'
+import CategoryTag from './CategoryTag.vue'
+import { useAppStore } from '@/stores/app'
 
 interface Props {
   websites: Website[]
@@ -81,6 +90,8 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   loading: false
 })
+
+const appStore = useAppStore()
 
 const getDefaultIcon = (domain: string) => {
   return `https://www.google.com/s2/favicons?domain=${domain}&sz=64`
@@ -93,6 +104,28 @@ const handleImageError = (event: Event) => {
 
 const openWebsite = (url: string) => {
   window.open(url, '_blank', 'noopener,noreferrer')
+}
+
+const handleCategoryClick = (categoryPath: string[]) => {
+  // 设置分类筛选
+  appStore.setSelectedCategoryPath(categoryPath)
+  // 清空搜索查询，专注于分类筛选
+  appStore.clearSearch()
+  // 关闭侧边栏（在移动端）
+  if (window.innerWidth <= 768) {
+    appStore.closeSidebar()
+  }
+}
+
+const handleTagClick = (tag: string) => {
+  // 使用标签进行搜索
+  appStore.setSearchQuery(tag)
+  // 清空分类筛选，专注于标签搜索
+  appStore.setSelectedCategoryPath(null)
+  // 关闭侧边栏（在移动端）
+  if (window.innerWidth <= 768) {
+    appStore.closeSidebar()
+  }
 }
 
 // 波纹效果
@@ -229,6 +262,13 @@ const createRipple = (event: MouseEvent, element: HTMLElement) => {
   position: relative;
 }
 
+.card-badges {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-left: auto;
+}
+
 .card-icon {
   width: 48px;
   height: 48px;
@@ -277,19 +317,17 @@ const createRipple = (event: MouseEvent, element: HTMLElement) => {
 }
 
 .featured-badge {
-  position: absolute;
-  top: -4px;
-  right: -4px;
-  width: 24px;
-  height: 24px;
+  width: 20px;
+  height: 20px;
   background: var(--warning);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
-  font-size: 12px;
+  font-size: 10px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  flex-shrink: 0;
 }
 
 .card-desc {
@@ -303,32 +341,49 @@ const createRipple = (event: MouseEvent, element: HTMLElement) => {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin-top: auto;
+  margin-top: 16px;
 }
 
 .tag {
   background-color: var(--primary-light);
   color: var(--primary);
-  padding: 6px 14px;
-  border-radius: 20px;
-  font-size: 13px;
+  padding: 6px 12px;
+  border-radius: 16px;
+  font-size: 12px;
   font-weight: 500;
   transition: var(--transition);
-  white-space: nowrap;
+  cursor: pointer;
+  border: 1px solid transparent;
   
-  &.tag-more {
-    background-color: var(--border);
-    color: var(--text-tertiary);
+  &:hover {
+    background-color: var(--primary);
+    color: white;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(var(--primary-rgb), 0.3);
   }
 }
+
+
 
 .card:hover .tag {
   background-color: var(--primary);
   color: white;
+}
+
+// 移动端适配
+@media (max-width: 768px) {
+  .card-tags {
+    gap: 6px;
+    margin-top: 12px;
+  }
   
-  &.tag-more {
-    background-color: var(--text-tertiary);
-    color: white;
+  .tag {
+    font-size: 11px;
+    padding: 5px 10px;
+  }
+  
+  .card-badges {
+    gap: 6px;
   }
 }
 

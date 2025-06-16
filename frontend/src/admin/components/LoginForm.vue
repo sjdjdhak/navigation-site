@@ -105,8 +105,8 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, type FormInstance } from 'element-plus'
-import { authService } from '../services/auth-service'
-import type { GitHubConfig } from '../services/github-api'
+import { authService } from '@/admin/services/auth-service'
+import type { GitHubConfig } from '@/admin/services/github-api'
 
 // 定义emits
 const emit = defineEmits<{
@@ -183,6 +183,9 @@ const handleLogin = async () => {
     
     // 调用认证服务登录
     await authService.login(form)
+    
+    // 确保状态完全同步
+    await new Promise(resolve => setTimeout(resolve, 50))
     
     ElMessage.success('GitHub连接成功！')
     
