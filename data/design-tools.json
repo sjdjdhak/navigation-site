@@ -6,8 +6,18 @@
     "url": "https://www.figma.com",
     "domain": "figma.com",
     "icon": "https://www.google.com/s2/favicons?domain=figma.com&sz=64",
-    "tags": ["设计", "协作", "UI", "原型", "云端"],
-    "categoryPath": ["design-tools", "ui-design", "visual-design"],
+    "tags": [
+      "设计",
+      "协作",
+      "UI",
+      "原型",
+      "云端"
+    ],
+    "categoryPath": [
+      "design-tools",
+      "ui-design",
+      "visual-design"
+    ],
     "featured": true,
     "createdAt": "2024-01-01T00:00:00Z",
     "updatedAt": "2024-01-01T00:00:00Z"
@@ -19,8 +29,17 @@
     "url": "https://www.sketch.com",
     "domain": "sketch.com",
     "icon": "https://www.google.com/s2/favicons?domain=sketch.com&sz=64",
-    "tags": ["设计", "UI", "矢量", "Mac"],
-    "categoryPath": ["design-tools", "ui-design", "visual-design"],
+    "tags": [
+      "设计",
+      "UI",
+      "矢量",
+      "Mac"
+    ],
+    "categoryPath": [
+      "design-tools",
+      "ui-design",
+      "visual-design"
+    ],
     "featured": false,
     "createdAt": "2024-01-01T00:00:00Z",
     "updatedAt": "2024-01-01T00:00:00Z"
@@ -32,8 +51,17 @@
     "url": "https://www.adobe.com/products/xd.html",
     "domain": "adobe.com",
     "icon": "https://www.google.com/s2/favicons?domain=adobe.com&sz=64",
-    "tags": ["设计", "原型", "Adobe", "UX"],
-    "categoryPath": ["design-tools", "prototyping", "interactive-prototype"],
+    "tags": [
+      "设计",
+      "原型",
+      "Adobe",
+      "UX"
+    ],
+    "categoryPath": [
+      "design-tools",
+      "prototyping",
+      "interactive-prototype"
+    ],
     "featured": true,
     "createdAt": "2024-01-01T00:00:00Z",
     "updatedAt": "2024-01-01T00:00:00Z"
@@ -45,8 +73,17 @@
     "url": "https://www.framer.com",
     "domain": "framer.com",
     "icon": "https://www.google.com/s2/favicons?domain=framer.com&sz=64",
-    "tags": ["原型", "交互", "动画", "设计"],
-    "categoryPath": ["design-tools", "prototyping", "animation"],
+    "tags": [
+      "原型",
+      "交互",
+      "动画",
+      "设计"
+    ],
+    "categoryPath": [
+      "design-tools",
+      "prototyping",
+      "animation"
+    ],
     "featured": false,
     "createdAt": "2024-01-01T00:00:00Z",
     "updatedAt": "2024-01-01T00:00:00Z"
@@ -58,8 +95,17 @@
     "url": "https://principleformac.com",
     "domain": "principleformac.com",
     "icon": "https://www.google.com/s2/favicons?domain=principleformac.com&sz=64",
-    "tags": ["动效", "交互", "动画", "原型"],
-    "categoryPath": ["design-tools", "prototyping", "animation"],
+    "tags": [
+      "动效",
+      "交互",
+      "动画",
+      "原型"
+    ],
+    "categoryPath": [
+      "design-tools",
+      "prototyping",
+      "animation"
+    ],
     "featured": false,
     "createdAt": "2024-01-01T00:00:00Z",
     "updatedAt": "2024-01-01T00:00:00Z"
@@ -71,8 +117,17 @@
     "url": "https://balsamiq.com",
     "domain": "balsamiq.com",
     "icon": "https://www.google.com/s2/favicons?domain=balsamiq.com&sz=64",
-    "tags": ["线框图", "原型", "低保真", "快速"],
-    "categoryPath": ["design-tools", "ui-design", "wireframe"],
+    "tags": [
+      "线框图",
+      "原型",
+      "低保真",
+      "快速"
+    ],
+    "categoryPath": [
+      "design-tools",
+      "ui-design",
+      "wireframe"
+    ],
     "featured": false,
     "createdAt": "2024-01-01T00:00:00Z",
     "updatedAt": "2024-01-01T00:00:00Z"
@@ -84,8 +139,16 @@
     "url": "https://iconify.design",
     "domain": "iconify.design",
     "icon": "https://www.google.com/s2/favicons?domain=iconify.design&sz=64",
-    "tags": ["图标", "免费", "SVG", "开源"],
-    "categoryPath": ["design-tools", "icons"],
+    "tags": [
+      "图标",
+      "免费",
+      "SVG",
+      "开源"
+    ],
+    "categoryPath": [
+      "design-tools",
+      "icons"
+    ],
     "featured": true,
     "createdAt": "2024-01-01T00:00:00Z",
     "updatedAt": "2024-01-01T00:00:00Z"
@@ -97,8 +160,16 @@
     "url": "https://feathericons.com",
     "domain": "feathericons.com",
     "icon": "https://www.google.com/s2/favicons?domain=feathericons.com&sz=64",
-    "tags": ["图标", "开源", "简洁", "SVG"],
-    "categoryPath": ["design-tools", "icons"],
+    "tags": [
+      "图标",
+      "开源",
+      "简洁",
+      "SVG"
+    ],
+    "categoryPath": [
+      "design-tools",
+      "icons"
+    ],
     "featured": false,
     "createdAt": "2024-01-01T00:00:00Z",
     "updatedAt": "2024-01-01T00:00:00Z"
@@ -110,8 +181,16 @@
     "url": "https://undraw.co",
     "domain": "undraw.co",
     "icon": "https://www.google.com/s2/favicons?domain=undraw.co&sz=64",
-    "tags": ["插画", "免费", "SVG", "可定制"],
-    "categoryPath": ["design-tools", "illustrations"],
+    "tags": [
+      "插画",
+      "免费",
+      "SVG",
+      "可定制"
+    ],
+    "categoryPath": [
+      "design-tools",
+      "illustrations"
+    ],
     "featured": true,
     "createdAt": "2024-01-01T00:00:00Z",
     "updatedAt": "2024-01-01T00:00:00Z"
@@ -123,8 +202,17 @@
     "url": "https://dribbble.com",
     "domain": "dribbble.com",
     "icon": "https://www.google.com/s2/favicons?domain=dribbble.com&sz=64",
-    "tags": ["设计", "灵感", "创意", "作品集", "社区"],
-    "categoryPath": ["design-tools", "inspiration"],
+    "tags": [
+      "设计",
+      "灵感",
+      "创意",
+      "作品集",
+      "社区"
+    ],
+    "categoryPath": [
+      "design-tools",
+      "inspiration"
+    ],
     "featured": true,
     "createdAt": "2024-01-01T00:00:00Z",
     "updatedAt": "2024-01-01T00:00:00Z"
@@ -136,10 +224,37 @@
     "url": "https://www.behance.net",
     "domain": "behance.net",
     "icon": "https://www.google.com/s2/favicons?domain=behance.net&sz=64",
-    "tags": ["设计", "作品集", "创意", "Adobe"],
-    "categoryPath": ["design-tools", "inspiration"],
+    "tags": [
+      "设计",
+      "作品集",
+      "创意",
+      "Adobe"
+    ],
+    "categoryPath": [
+      "design-tools",
+      "inspiration"
+    ],
     "featured": false,
     "createdAt": "2024-01-01T00:00:00Z",
     "updatedAt": "2024-01-01T00:00:00Z"
+  },
+  {
+    "title": "测试",
+    "url": "http://localhost:3004/admin/sites",
+    "description": "无",
+    "categoryPath": [
+      "design-tools",
+      "ui-design",
+      "wireframe"
+    ],
+    "tags": [
+      "测试"
+    ],
+    "icon": "/assets/default-favicon.svg",
+    "domain": "localhost",
+    "featured": false,
+    "id": "",
+    "createdAt": "2025-06-16T11:56:30.689Z",
+    "updatedAt": "2025-06-16T11:56:30.689Z"
   }
-] 
+]
