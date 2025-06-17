@@ -2,6 +2,43 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import type { Website, Category, CategoryConfig, SearchResult } from '@/types'
 
+// 预加载配置接口
+interface PreloadConfig {
+  enabled: boolean
+  maxConcurrent: number
+  retryTimes: number
+  retryDelay: number
+  priorityCategories: string[]
+  immediateLoad: string[]
+  delayedLoad: {
+    priority: string[]
+    normal: string[]
+  }
+}
+
+// 加载状态接口
+interface LoadingProgress {
+  total: number
+  loaded: number
+  failed: number
+  loading: number
+  percentage: number
+}
+
+// 默认预加载配置
+const DEFAULT_PRELOAD_CONFIG: PreloadConfig = {
+  enabled: true,
+  maxConcurrent: 3,
+  retryTimes: 2,
+  retryDelay: 1000,
+  priorityCategories: ['design-tools', 'dev-resources', 'productivity'],
+  immediateLoad: [], // 立即加载的分类（除了推荐网站）
+  delayedLoad: {
+    priority: ['design-tools', 'dev-resources', 'productivity'], // 优先预加载
+    normal: [] // 普通预加载，将自动包含所有其他分类
+  }
+}
+
 // 数据适配器：将旧格式转换为新格式
 const adaptCategoryData = (rawData: any[]): Category[] => {
   return rawData.map(item => {
@@ -41,6 +78,20 @@ export const useDataStore = defineStore('data', () => {
   const loadedCategories = ref<Set<string>>(new Set())
   const loadingCategories = ref<Set<string>>(new Set())
   const categoryLoadPromises = ref<Map<string, Promise<void>>>(new Map())
+
+  // 预加载相关状态
+  const preloadConfig = ref<PreloadConfig>({ ...DEFAULT_PRELOAD_CONFIG })
+  const preloadProgress = ref<LoadingProgress>({
+    total: 0,
+    loaded: 0,
+    failed: 0,
+    loading: 0,
+    percentage: 0
+  })
+  const failedCategories = ref<Set<string>>(new Set())
+  const retryAttempts = ref<Map<string, number>>(new Map())
+  const preloadQueue = ref<string[]>([])
+  const isPreloading = ref(false)
 
   // 计算属性
   const categories = computed(() => {
@@ -127,6 +178,27 @@ export const useDataStore = defineStore('data', () => {
     return flattened
   })
 
+  // 获取所有顶级分类ID
+  const getAllCategoryIds = (): string[] => {
+    return categories.value.map(cat => cat.id)
+  }
+
+  // 更新预加载进度
+  const updatePreloadProgress = () => {
+    const total = preloadProgress.value.total
+    const loaded = loadedCategories.value.size
+    const loading = loadingCategories.value.size
+    const failed = failedCategories.value.size
+    
+    preloadProgress.value = {
+      total,
+      loaded,
+      failed,
+      loading,
+      percentage: total > 0 ? Math.round((loaded / total) * 100) : 0
+    }
+  }
+
   // 动作
   const loadCategories = async () => {
     try {
@@ -155,8 +227,22 @@ export const useDataStore = defineStore('data', () => {
     }
   }
 
+  // 验证分类ID是否有效
+  const isValidCategoryId = (categoryId: string): boolean => {
+    // 检查是否是顶级分类
+    const topLevelCategory = categories.value.find(cat => cat.id === categoryId)
+    return !!topLevelCategory
+  }
+
   // 懒加载特定分类的网站数据
   const loadWebsitesLazy = async (categoryId: string): Promise<void> => {
+    // 验证分类ID
+    if (!isValidCategoryId(categoryId)) {
+      console.warn(`⚠️ 跳过无效分类: ${categoryId}`)
+      failedCategories.value.add(categoryId)
+      return Promise.resolve()
+    }
+
     // 如果已经加载或正在加载，返回现有的 Promise
     if (loadedCategories.value.has(categoryId)) {
       return Promise.resolve()
@@ -171,9 +257,15 @@ export const useDataStore = defineStore('data', () => {
       try {
         loadingCategories.value.add(categoryId)
         console.debug(`🔄 懒加载分类数据: ${categoryId}`)
+        updatePreloadProgress()
         
         const websiteData = await import(`@data/${categoryId}.json`)
         const data = websiteData.default
+        
+        // 验证数据格式
+        if (!Array.isArray(data)) {
+          throw new Error(`分类 ${categoryId} 的数据格式不正确`)
+        }
         
         // 移除旧的相同分类数据，避免重复
         websites.value = websites.value.filter(w => 
@@ -183,14 +275,19 @@ export const useDataStore = defineStore('data', () => {
         // 添加新数据
         websites.value.push(...data)
         loadedCategories.value.add(categoryId)
+        failedCategories.value.delete(categoryId) // 清除失败标记
         
         console.debug(`✅ 分类数据加载完成: ${categoryId}, 加载了 ${data.length} 个网站`)
       } catch (err) {
         console.error(`❌ 分类数据加载失败: ${categoryId}`, err)
-        throw err
+        failedCategories.value.add(categoryId)
+        
+        // 不再抛出错误，避免影响其他分类的加载
+        console.debug(`⚠️ 分类 ${categoryId} 加载失败，将跳过此分类`)
       } finally {
         loadingCategories.value.delete(categoryId)
         categoryLoadPromises.value.delete(categoryId)
+        updatePreloadProgress()
       }
     })()
 
@@ -198,13 +295,155 @@ export const useDataStore = defineStore('data', () => {
     return loadPromise
   }
 
-  // 批量懒加载多个分类
   const loadMultipleCategoriesLazy = async (categoryIds: string[]): Promise<void> => {
-    const loadPromises = categoryIds.map(id => loadWebsitesLazy(id))
-    await Promise.allSettled(loadPromises)
+    const promises = categoryIds.map(id => loadWebsitesLazy(id))
+    await Promise.allSettled(promises)
   }
 
-  // 预加载推荐分类（后台静默加载）
+  // 带重试机制的加载单个分类
+  const loadCategoryWithRetry = async (categoryId: string): Promise<boolean> => {
+    // 验证分类ID
+    if (!isValidCategoryId(categoryId)) {
+      console.warn(`⚠️ 跳过无效分类: ${categoryId}`)
+      return false
+    }
+
+    const maxRetries = preloadConfig.value.retryTimes
+    let currentAttempt = retryAttempts.value.get(categoryId) || 0
+    
+    while (currentAttempt <= maxRetries) {
+      try {
+        await loadWebsitesLazy(categoryId)
+        retryAttempts.value.delete(categoryId)
+        return true
+      } catch (error) {
+        currentAttempt++
+        retryAttempts.value.set(categoryId, currentAttempt)
+        
+        if (currentAttempt <= maxRetries) {
+          console.debug(`🔄 重试加载分类 ${categoryId}, 第 ${currentAttempt}/${maxRetries} 次`)
+          await new Promise(resolve => setTimeout(resolve, preloadConfig.value.retryDelay))
+        } else {
+          console.error(`❌ 分类 ${categoryId} 加载失败，已达到最大重试次数`)
+          failedCategories.value.add(categoryId)
+          return false
+        }
+      }
+    }
+    return false
+  }
+
+  // 并发控制的批量加载
+  const loadCategoriesWithConcurrencyControl = async (categoryIds: string[]): Promise<void> => {
+    const { maxConcurrent } = preloadConfig.value
+    const chunks: string[][] = []
+    
+    // 将分类ID分组，每组最多包含maxConcurrent个
+    for (let i = 0; i < categoryIds.length; i += maxConcurrent) {
+      chunks.push(categoryIds.slice(i, i + maxConcurrent))
+    }
+    
+    // 逐组加载
+    for (const chunk of chunks) {
+      const promises = chunk.map(id => loadCategoryWithRetry(id))
+      await Promise.allSettled(promises)
+      
+      // 小延迟，避免过于频繁的网络请求
+      if (chunks.indexOf(chunk) < chunks.length - 1) {
+        await new Promise(resolve => setTimeout(resolve, 100))
+      }
+    }
+  }
+
+  // 全量预加载所有分类
+  const preloadAllCategories = async (): Promise<void> => {
+    if (!preloadConfig.value.enabled || isPreloading.value) {
+      return
+    }
+    
+    isPreloading.value = true
+    
+    try {
+      const allCategoryIds = getAllCategoryIds()
+      const unloadedCategories = allCategoryIds.filter(id => !loadedCategories.value.has(id))
+      
+      if (unloadedCategories.length === 0) {
+        console.debug('✅ 所有分类已加载完成')
+        return
+      }
+      
+      // 设置总数
+      preloadProgress.value.total = allCategoryIds.length
+      updatePreloadProgress()
+      
+      console.debug(`🚀 开始预加载所有分类数据，共 ${unloadedCategories.length} 个分类待加载`)
+      
+      // 分优先级加载
+      const { priorityCategories } = preloadConfig.value
+      const priorityToLoad = unloadedCategories.filter(id => priorityCategories.includes(id))
+      const normalToLoad = unloadedCategories.filter(id => !priorityCategories.includes(id))
+      
+      // 先加载优先级分类
+      if (priorityToLoad.length > 0) {
+        console.debug(`📋 优先加载分类: ${priorityToLoad.join(', ')}`)
+        await loadCategoriesWithConcurrencyControl(priorityToLoad)
+      }
+      
+      // 再加载普通分类
+      if (normalToLoad.length > 0) {
+        console.debug(`📋 普通加载分类: ${normalToLoad.join(', ')}`)
+        await loadCategoriesWithConcurrencyControl(normalToLoad)
+      }
+      
+      const finalLoaded = loadedCategories.value.size
+      const finalFailed = failedCategories.value.size
+      
+      console.debug(`✅ 预加载完成！成功: ${finalLoaded}, 失败: ${finalFailed}`)
+      
+    } catch (error) {
+      console.error('❌ 预加载过程中发生错误:', error)
+    } finally {
+      isPreloading.value = false
+      updatePreloadProgress()
+    }
+  }
+
+  // 渐进式预加载
+  const progressivePreload = async (): Promise<void> => {
+    if (!preloadConfig.value.enabled) {
+      return
+    }
+    
+    const allCategoryIds = getAllCategoryIds()
+    preloadProgress.value.total = allCategoryIds.length
+    
+    const { delayedLoad } = preloadConfig.value
+    
+    // 第一阶段：优先分类（500ms后）
+    setTimeout(async () => {
+      const priorityToLoad = delayedLoad.priority.filter(id => 
+        allCategoryIds.includes(id) && !loadedCategories.value.has(id)
+      )
+      
+      if (priorityToLoad.length > 0) {
+        console.debug(`🎯 第一阶段预加载: ${priorityToLoad.join(', ')}`)
+        await loadCategoriesWithConcurrencyControl(priorityToLoad)
+      }
+    }, 500)
+    
+    // 第二阶段：剩余分类（2秒后）
+    setTimeout(async () => {
+      const remainingCategories = allCategoryIds.filter(id => 
+        !loadedCategories.value.has(id) && !loadingCategories.value.has(id)
+      )
+      
+      if (remainingCategories.length > 0) {
+        console.debug(`🔄 第二阶段预加载: ${remainingCategories.join(', ')}`)
+        await loadCategoriesWithConcurrencyControl(remainingCategories)
+      }
+    }, 2000)
+  }
+
   const preloadPopularCategories = async (): Promise<void> => {
     const popularCategories = ['design-tools', 'dev-resources', 'productivity']
     
@@ -369,21 +608,86 @@ export const useDataStore = defineStore('data', () => {
     return loadingCategories.value.has(categoryId)
   }
 
-  // 初始化数据
-  const initialize = async () => {
+  // 重试失败的分类
+  const retryFailedCategories = async (): Promise<void> => {
+    const failedIds = Array.from(failedCategories.value)
+    if (failedIds.length === 0) return
+    
+    console.debug(`🔄 重试失败的分类: ${failedIds.join(', ')}`)
+    
+    // 清除失败状态
+    failedIds.forEach(id => {
+      failedCategories.value.delete(id)
+      retryAttempts.value.delete(id)
+    })
+    
+    await loadCategoriesWithConcurrencyControl(failedIds)
+  }
+
+  // 更新预加载配置
+  const updatePreloadConfig = (newConfig: Partial<PreloadConfig>) => {
+    preloadConfig.value = { ...preloadConfig.value, ...newConfig }
+  }
+
+  // 获取预加载统计信息
+  const getPreloadStats = () => {
+    return {
+      progress: preloadProgress.value,
+      isPreloading: isPreloading.value,
+      loadedCount: loadedCategories.value.size,
+      failedCount: failedCategories.value.size,
+      loadedCategories: Array.from(loadedCategories.value),
+      failedCategories: Array.from(failedCategories.value),
+      config: preloadConfig.value
+    }
+  }
+
+  // 清除预加载状态
+  const clearPreloadState = () => {
+    preloadProgress.value = {
+      total: 0,
+      loaded: 0,
+      failed: 0,
+      loading: 0,
+      percentage: 0
+    }
+    failedCategories.value.clear()
+    retryAttempts.value.clear()
+    isPreloading.value = false
+  }
+
+  // 优化后的初始化方法
+  const initialize = async (strategy: 'lazy' | 'progressive' | 'immediate' = 'progressive') => {
     await loadCategories()
-    // 只加载推荐网站，其他分类按需加载
+    
+    // 设置预加载总数
+    const allCategoryIds = getAllCategoryIds()
+    preloadProgress.value.total = allCategoryIds.length
+    
+    // 检查是否有推荐网站，如果没有则加载第一个分类作为示例
     const featuredSites = websites.value.filter(w => w.featured)
     if (featuredSites.length === 0) {
-      // 如果没有推荐网站，加载第一个分类作为示例
       const firstCategory = categories.value[0]
       if (firstCategory) {
         await loadWebsitesLazy(firstCategory.id)
       }
     }
     
-    // 启动预加载
-    preloadPopularCategories()
+    // 根据策略启动不同的预加载方式
+    switch (strategy) {
+      case 'immediate':
+        // 立即加载所有数据
+        setTimeout(() => preloadAllCategories(), 100)
+        break
+      case 'progressive':
+        // 渐进式预加载（默认策略）
+        progressivePreload()
+        break
+      case 'lazy':
+        // 只预加载热门分类
+        preloadPopularCategories()
+        break
+    }
   }
 
   return {
@@ -393,6 +697,13 @@ export const useDataStore = defineStore('data', () => {
     rawCategoriesData,
     loading,
     error,
+    
+    // 预加载状态
+    preloadConfig,
+    preloadProgress,
+    isPreloading,
+    failedCategories: computed(() => Array.from(failedCategories.value)),
+    loadedCategories: computed(() => Array.from(loadedCategories.value)),
     
     // 计算属性
     categories,
@@ -407,7 +718,17 @@ export const useDataStore = defineStore('data', () => {
     loadWebsites,
     loadWebsitesLazy,
     loadMultipleCategoriesLazy,
+    
+    // 预加载方法
+    preloadAllCategories,
+    progressivePreload,
     preloadPopularCategories,
+    retryFailedCategories,
+    updatePreloadConfig,
+    getPreloadStats,
+    clearPreloadState,
+    
+    // 其他方法
     searchWebsites,
     getWebsitesByPath,
     getWebsitesByExactPath,
