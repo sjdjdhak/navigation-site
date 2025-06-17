@@ -348,6 +348,14 @@ class DataService {
       this.setCache(cacheKey, validSites)
       return validSites
     } catch (error) {
+      // 检查是否是文件不存在错误（404）
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      if (errorMessage.includes('404') || errorMessage.includes('Not Found')) {
+        console.log(`📁 分类 ${categoryId} 的数据文件不存在，返回空数组`)
+        this.setCache(cacheKey, [])
+        return []
+      }
+      
       console.error(`获取分类 ${categoryId} 的网站数据失败:`, error)
       console.log(`使用分类 ${categoryId} 的模拟数据作为兜底方案`)
       

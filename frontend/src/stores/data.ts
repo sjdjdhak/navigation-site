@@ -279,11 +279,19 @@ export const useDataStore = defineStore('data', () => {
         
         console.debug(`✅ 分类数据加载完成: ${categoryId}, 加载了 ${data.length} 个网站`)
       } catch (err) {
-        console.error(`❌ 分类数据加载失败: ${categoryId}`, err)
-        failedCategories.value.add(categoryId)
-        
-        // 不再抛出错误，避免影响其他分类的加载
-        console.debug(`⚠️ 分类 ${categoryId} 加载失败，将跳过此分类`)
+        // 检查是否是文件不存在的错误
+        const errorMessage = err instanceof Error ? err.message : String(err)
+        if (errorMessage.includes('Failed to fetch') || errorMessage.includes('Failed to resolve') || errorMessage.includes('404')) {
+          // 文件不存在，这是正常情况（子分类暂无数据）
+          console.debug(`📁 分类 ${categoryId} 暂无数据文件，返回空数组`)
+          loadedCategories.value.add(categoryId)
+          failedCategories.value.delete(categoryId)
+        } else {
+          // 其他错误
+          console.error(`❌ 分类数据加载失败: ${categoryId}`, err)
+          failedCategories.value.add(categoryId)
+          console.debug(`⚠️ 分类 ${categoryId} 加载失败，将跳过此分类`)
+        }
       } finally {
         loadingCategories.value.delete(categoryId)
         categoryLoadPromises.value.delete(categoryId)
