@@ -1,6 +1,8 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import type { Website, Category, CategoryConfig, SearchResult } from '@/types'
+import { DataSourceFactory } from '@/services/data-source'
+import type { DataSource } from '@/services/data-source'
 
 // 预加载配置接口
 interface PreloadConfig {
@@ -67,6 +69,9 @@ const adaptCategoryData = (rawData: any[]): Category[] => {
 }
 
 export const useDataStore = defineStore('data', () => {
+  // 数据源实例
+  const dataSource = ref<DataSource | null>(null)
+  
   // 状态
   const websites = ref<Website[]>([])
   const categoryConfig = ref<CategoryConfig | null>(null)
@@ -205,12 +210,13 @@ export const useDataStore = defineStore('data', () => {
       loading.value = true
       error.value = null
       
-      // 获取分类数据
-      const categoriesResponse = await fetch('/data/categories.json')
-      if (!categoriesResponse.ok) {
-        throw new Error(`Failed to fetch categories.json: ${categoriesResponse.status}`)
+      // 初始化数据源（如果还没有）
+      if (!dataSource.value) {
+        dataSource.value = DataSourceFactory.create()
       }
-      const rawData = await categoriesResponse.json()
+      
+      // 使用数据源加载分类数据
+      const rawData = await dataSource.value.getCategories()
       
       // 检查数据格式并适配
       if (rawData.categories && Array.isArray(rawData.categories)) {
@@ -264,11 +270,12 @@ export const useDataStore = defineStore('data', () => {
         console.debug(`🔄 懒加载分类数据: ${categoryId}`)
         updatePreloadProgress()
         
-        const response = await fetch(`/data/${categoryId}.json`)
-        if (!response.ok) {
-          throw new Error(`Failed to fetch ${categoryId}.json: ${response.status}`)
+        // 初始化数据源（如果还没有）
+        if (!dataSource.value) {
+          dataSource.value = DataSourceFactory.create()
         }
-        const data = await response.json()
+        
+        const data = await dataSource.value.getCategoryData(categoryId)
         
         // 验证数据格式
         if (!Array.isArray(data)) {
@@ -705,6 +712,9 @@ export const useDataStore = defineStore('data', () => {
   }
 
   return {
+    // 数据源
+    dataSource: computed(() => dataSource.value),
+    
     // 状态
     websites,
     categoryConfig,

@@ -1,5 +1,30 @@
 import type { Category, CategoryConfig, Website } from '@/types'
+import { getDataConfig } from '@/config/data-config'
 import { githubApi } from '@/admin/services/github-api'
+
+// GitHub公共访问配置
+const GITHUB_CONFIG = {
+  owner: 'sjdjdhak',
+  repo: 'navigation-site',
+  branch: 'main',
+  baseUrl: 'https://raw.githubusercontent.com'
+}
+
+// 直接访问GitHub raw文件（无需token）
+async function fetchGitHubRaw(path: string): Promise<any> {
+  const url = `${GITHUB_CONFIG.baseUrl}/${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}/${GITHUB_CONFIG.branch}/${path}`
+  console.debug(`GitHubRaw - 访问URL: ${url}`)
+  
+  const response = await fetch(url)
+  if (!response.ok) {
+    if (response.status === 404) {
+      throw new Error(`文件不存在: ${path}`)
+    }
+    throw new Error(`获取文件失败: ${response.statusText}`)
+  }
+  
+  return await response.json()
+}
 
 // 数据源接口
 export interface DataSource {
@@ -93,20 +118,19 @@ export class GitHubDataSource implements DataSource {
 
       console.debug('GitHubDataSource - 从GitHub获取分类数据')
       this.recordApiCall()
-      const result = await githubApi.getFile('data/categories.json')
-      this.updateRateLimit(result.headers)
+      const result = await fetchGitHubRaw('data/categories.json')
       
-      if (!result.content || !result.content.categories) {
-        throw new Error('GitHub API返回的分类配置数据格式无效')
+      if (!result || !result.categories) {
+        throw new Error('GitHub返回的分类配置数据格式无效')
       }
 
       // 更新缓存
       this.cache.set(cacheKey, {
-        data: result.content,
+        data: result,
         timestamp: Date.now()
       })
 
-      return result.content
+      return result
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error)
       this.recordError(`加载分类失败: ${errorMessage}`)
@@ -128,20 +152,19 @@ export class GitHubDataSource implements DataSource {
 
       console.debug(`GitHubDataSource - 从GitHub获取分类数据: ${categoryId}`)
       this.recordApiCall()
-      const result = await githubApi.getFile(`data/${categoryId}.json`)
-      this.updateRateLimit(result.headers)
+      const result = await fetchGitHubRaw(`data/${categoryId}.json`)
       
-      if (!Array.isArray(result.content)) {
-        throw new Error(`GitHub API返回的分类 ${categoryId} 数据格式不正确`)
+      if (!Array.isArray(result)) {
+        throw new Error(`GitHub返回的分类 ${categoryId} 数据格式不正确`)
       }
 
       // 更新缓存
       this.cache.set(cacheKey, {
-        data: result.content,
+        data: result,
         timestamp: Date.now()
       })
 
-      return result.content
+      return result
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error)
       if (errorMessage.includes('文件不存在') || 
@@ -158,11 +181,8 @@ export class GitHubDataSource implements DataSource {
   }
 
   isAvailable(): boolean {
-    try {
-      return !!githubApi.getConfig()
-    } catch {
-      return false
-    }
+    // GitHub Raw访问不需要API配置，总是可用的
+    return true
   }
 
   // 清除缓存
@@ -334,8 +354,11 @@ export class HybridDataSource implements DataSource {
 export class DataSourceFactory {
   private static instance: DataSource | null = null
 
-  static create(type: 'static' | 'github' | 'hybrid' = 'static'): DataSource {
-    switch (type) {
+  static create(type?: 'static' | 'github' | 'hybrid'): DataSource {
+    // 如果没有指定类型，从配置中获取
+    const dataSourceType = type || getDataConfig().dataSource
+    
+    switch (dataSourceType) {
       case 'github':
         return new GitHubDataSource()
       case 'hybrid':
