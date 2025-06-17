@@ -1,5 +1,13 @@
 <template>
   <div class="home-page">
+    <!-- 数据源状态 -->
+    <DataSourceStatus 
+      ref="dataSourceStatus"
+      :auto-hide="true"
+      :auto-hide-delay="3000"
+      :show-on-error="true"
+    />
+    
     <!-- 导航栏 -->
     <AppNavbar />
     
@@ -68,6 +76,7 @@ import AppSidebar from '@/components/layout/AppSidebar.vue'
 import SearchSection from '@/components/SearchSection.vue'
 import ResourceGrid from '@/components/ResourceGrid.vue'
 import LoadingProgress from '@/components/LoadingProgress.vue'
+import DataSourceStatus from '@/components/DataSourceStatus.vue'
 
 const appStore = useAppStore()
 const dataStore = useDataStore()

@@ -1,0 +1,301 @@
+[
+  {
+    "id": "notion",
+    "title": "Notion",
+    "description": "集笔记、知识库、任务管理于一体的全能工作空间",
+    "url": "https://www.notion.so",
+    "domain": "notion.so",
+    "icon": "https://www.google.com/s2/favicons?domain=notion.so&sz=64",
+    "tags": [
+      "笔记",
+      "知识管理",
+      "协作",
+      "全能"
+    ],
+    "categoryPath": [
+      "productivity",
+      "note-taking"
+    ],
+    "featured": true,
+    "createdAt": "2024-01-01T00:00:00Z",
+    "updatedAt": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "obsidian",
+    "title": "Obsidian",
+    "description": "强大的知识管理工具，支持双向链接和图谱可视化",
+    "url": "https://obsidian.md",
+    "domain": "obsidian.md",
+    "icon": "https://www.google.com/s2/favicons?domain=obsidian.md&sz=64",
+    "tags": [
+      "笔记",
+      "知识图谱",
+      "双向链接",
+      "本地"
+    ],
+    "categoryPath": [
+      "productivity",
+      "note-taking"
+    ],
+    "featured": true,
+    "createdAt": "2024-01-01T00:00:00Z",
+    "updatedAt": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "logseq",
+    "title": "Logseq",
+    "description": "开源的本地优先知识管理工具，支持块级引用和图谱",
+    "url": "https://logseq.com",
+    "domain": "logseq.com",
+    "icon": "https://www.google.com/s2/favicons?domain=logseq.com&sz=64",
+    "tags": [
+      "笔记",
+      "开源",
+      "本地优先",
+      "块级引用"
+    ],
+    "categoryPath": [
+      "productivity",
+      "note-taking"
+    ],
+    "featured": false,
+    "createdAt": "2024-01-01T00:00:00Z",
+    "updatedAt": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "evernote",
+    "title": "Evernote",
+    "description": "经典的笔记应用，强大的搜索和整理功能",
+    "url": "https://evernote.com",
+    "domain": "evernote.com",
+    "icon": "https://www.google.com/s2/favicons?domain=evernote.com&sz=64",
+    "tags": [
+      "笔记",
+      "搜索",
+      "整理",
+      "经典"
+    ],
+    "categoryPath": [
+      "productivity",
+      "note-taking"
+    ],
+    "featured": false,
+    "createdAt": "2024-01-01T00:00:00Z",
+    "updatedAt": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "asana",
+    "title": "Asana",
+    "description": "团队项目管理和任务协作平台，简洁易用的界面设计",
+    "url": "https://asana.com",
+    "domain": "asana.com",
+    "icon": "https://www.google.com/s2/favicons?domain=asana.com&sz=64",
+    "tags": [
+      "项目管理",
+      "团队协作",
+      "任务",
+      "简洁"
+    ],
+    "categoryPath": [
+      "productivity",
+      "task-management",
+      "project-management"
+    ],
+    "featured": true,
+    "createdAt": "2024-01-01T00:00:00Z",
+    "updatedAt": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "trello",
+    "title": "Trello",
+    "description": "基于看板的项目管理工具，直观的卡片式任务管理",
+    "url": "https://trello.com",
+    "domain": "trello.com",
+    "icon": "https://www.google.com/s2/favicons?domain=trello.com&sz=64",
+    "tags": [
+      "看板",
+      "项目管理",
+      "卡片",
+      "直观"
+    ],
+    "categoryPath": [
+      "productivity",
+      "task-management",
+      "project-management"
+    ],
+    "featured": true,
+    "createdAt": "2024-01-01T00:00:00Z",
+    "updatedAt": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "monday",
+    "title": "Monday.com",
+    "description": "现代化的工作管理平台，可视化的项目跟踪和团队协作",
+    "url": "https://monday.com",
+    "domain": "monday.com",
+    "icon": "https://www.google.com/s2/favicons?domain=monday.com&sz=64",
+    "tags": [
+      "工作管理",
+      "可视化",
+      "团队",
+      "现代化"
+    ],
+    "categoryPath": [
+      "productivity",
+      "task-management",
+      "project-management"
+    ],
+    "featured": false,
+    "createdAt": "2024-01-01T00:00:00Z",
+    "updatedAt": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "toggl",
+    "title": "Toggl Track",
+    "description": "简单易用的时间追踪工具，帮助提高工作效率和时间管理",
+    "url": "https://toggl.com/track/",
+    "domain": "toggl.com",
+    "icon": "https://www.google.com/s2/favicons?domain=toggl.com&sz=64",
+    "tags": [
+      "时间追踪",
+      "效率",
+      "统计",
+      "简单"
+    ],
+    "categoryPath": [
+      "productivity",
+      "task-management",
+      "time-tracking"
+    ],
+    "featured": true,
+    "createdAt": "2024-01-01T00:00:00Z",
+    "updatedAt": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "rescuetime",
+    "title": "RescueTime",
+    "description": "自动时间追踪和生产力分析工具，了解你的时间都花在哪里",
+    "url": "https://www.rescuetime.com",
+    "domain": "rescuetime.com",
+    "icon": "https://www.google.com/s2/favicons?domain=rescuetime.com&sz=64",
+    "tags": [
+      "时间追踪",
+      "生产力",
+      "自动",
+      "分析"
+    ],
+    "categoryPath": [
+      "productivity",
+      "task-management",
+      "time-tracking"
+    ],
+    "featured": false,
+    "createdAt": "2024-01-01T00:00:00Z",
+    "updatedAt": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "slack",
+    "title": "Slack",
+    "description": "现代团队沟通和协作平台，整合各种工作流程",
+    "url": "https://slack.com",
+    "domain": "slack.com",
+    "icon": "https://www.google.com/s2/favicons?domain=slack.com&sz=64",
+    "tags": [
+      "团队沟通",
+      "协作",
+      "集成",
+      "现代"
+    ],
+    "categoryPath": [
+      "productivity",
+      "collaboration"
+    ],
+    "featured": true,
+    "createdAt": "2024-01-01T00:00:00Z",
+    "updatedAt": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "discord",
+    "title": "Discord",
+    "description": "语音、视频和文字沟通平台，适合团队和社区交流",
+    "url": "https://discord.com",
+    "domain": "discord.com",
+    "icon": "https://www.google.com/s2/favicons?domain=discord.com&sz=64",
+    "tags": [
+      "语音",
+      "视频",
+      "社区",
+      "游戏"
+    ],
+    "categoryPath": [
+      "productivity",
+      "collaboration"
+    ],
+    "featured": true,
+    "createdAt": "2024-01-01T00:00:00Z",
+    "updatedAt": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "microsoft-teams",
+    "title": "Microsoft Teams",
+    "description": "微软的团队协作平台，集成Office 365生态系统",
+    "url": "https://www.microsoft.com/en-us/microsoft-teams/group-chat-software",
+    "domain": "microsoft.com",
+    "icon": "https://www.google.com/s2/favicons?domain=microsoft.com&sz=64",
+    "tags": [
+      "团队协作",
+      "微软",
+      "Office",
+      "企业"
+    ],
+    "categoryPath": [
+      "productivity",
+      "collaboration"
+    ],
+    "featured": true,
+    "createdAt": "2024-01-01T00:00:00Z",
+    "updatedAt": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "zoom",
+    "title": "Zoom",
+    "description": "领先的视频会议和网络研讨会平台",
+    "url": "https://zoom.us",
+    "domain": "zoom.us",
+    "icon": "https://www.google.com/s2/favicons?domain=zoom.us&sz=64",
+    "tags": [
+      "视频会议",
+      "网络研讨会",
+      "远程",
+      "会议"
+    ],
+    "categoryPath": [
+      "productivity",
+      "collaboration"
+    ],
+    "featured": true,
+    "createdAt": "2024-01-01T00:00:00Z",
+    "updatedAt": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "miro",
+    "title": "Miro",
+    "description": "在线协作白板平台，支持头脑风暴、流程图和项目规划",
+    "url": "https://miro.com",
+    "domain": "miro.com",
+    "icon": "https://www.google.com/s2/favicons?domain=miro.com&sz=64",
+    "tags": [
+      "白板",
+      "协作",
+      "头脑风暴",
+      "可视化"
+    ],
+    "categoryPath": [
+      "productivity",
+      "collaboration"
+    ],
+    "featured": false,
+    "createdAt": "2024-01-01T00:00:00Z",
+    "updatedAt": "2024-01-01T00:00:00Z"
+  }
+]

@@ -205,9 +205,12 @@ export const useDataStore = defineStore('data', () => {
       loading.value = true
       error.value = null
       
-      // 导入根目录的JSON文件
-      const categoriesData = await import('@data/categories.json')
-      const rawData = categoriesData.default
+                    // 获取分类数据
+       const categoriesResponse = await fetch('/data/categories.json')
+       if (!categoriesResponse.ok) {
+         throw new Error(`Failed to fetch categories.json: ${categoriesResponse.status}`)
+       }
+       const rawData = await categoriesResponse.json()
       
       // 检查数据格式并适配
       if (Array.isArray(rawData)) {
@@ -259,8 +262,11 @@ export const useDataStore = defineStore('data', () => {
         console.debug(`🔄 懒加载分类数据: ${categoryId}`)
         updatePreloadProgress()
         
-        const websiteData = await import(`@data/${categoryId}.json`)
-        const data = websiteData.default
+        const response = await fetch(`/data/${categoryId}.json`)
+        if (!response.ok) {
+          throw new Error(`Failed to fetch ${categoryId}.json: ${response.status}`)
+        }
+        const data = await response.json()
         
         // 验证数据格式
         if (!Array.isArray(data)) {

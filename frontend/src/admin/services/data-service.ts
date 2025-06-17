@@ -317,6 +317,76 @@ class DataService {
     }
   }
 
+  // 创建分类数据文件
+  async createCategoryDataFile(categoryId: string, initialData: Site[] = []): Promise<void> {
+    try {
+      console.log(`创建分类数据文件: ${categoryId}`)
+      
+      await githubApi.updateFile(
+        `data/${categoryId}.json`,
+        initialData,
+        `创建分类数据文件: ${categoryId} - ${new Date().toLocaleString()}`
+      )
+      
+      // 清除相关缓存
+      this.clearCache(`sites-${categoryId}`)
+      
+      console.log(`分类数据文件创建成功: ${categoryId}`)
+    } catch (error) {
+      console.error(`创建分类数据文件失败: ${categoryId}`, error)
+      throw error
+    }
+  }
+
+  // 检查分类数据文件是否存在
+  async checkCategoryDataFile(categoryId: string): Promise<boolean> {
+    try {
+      await githubApi.getFile(`data/${categoryId}.json`)
+      return true
+    } catch (error) {
+      // 文件不存在
+      return false
+    }
+  }
+
+  // 确保分类数据文件存在（如果不存在则创建）
+  async ensureCategoryDataFile(categoryId: string): Promise<void> {
+    const exists = await this.checkCategoryDataFile(categoryId)
+    if (!exists) {
+      console.log(`分类数据文件不存在，正在创建: ${categoryId}`)
+      await this.createCategoryDataFile(categoryId, [])
+    }
+  }
+
+  // 批量确保分类数据文件存在
+  async ensureAllCategoryDataFiles(categories: CategoryConfig): Promise<void> {
+    const getAllCategoryIds = (cats: Category[]): string[] => {
+      const ids: string[] = []
+      for (const cat of cats) {
+        ids.push(cat.id)
+        if (cat.children) {
+          ids.push(...getAllCategoryIds(cat.children))
+        }
+      }
+      return ids
+    }
+
+    const allIds = getAllCategoryIds(categories.categories)
+    console.log(`检查 ${allIds.length} 个分类的数据文件`)
+
+    // 并发检查和创建
+    const tasks = allIds.map(async (id) => {
+      try {
+        await this.ensureCategoryDataFile(id)
+      } catch (error) {
+        console.warn(`确保分类数据文件失败: ${id}`, error)
+      }
+    })
+
+    await Promise.allSettled(tasks)
+    console.log('所有分类数据文件检查完成')
+  }
+
   // 获取指定分类的网站数据
   async getSitesByCategory(categoryId: string): Promise<Site[]> {
     const cacheKey = `sites-${categoryId}`

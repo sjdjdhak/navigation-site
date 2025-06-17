@@ -21,22 +21,40 @@
           <div class="tree-panel-header">
             <h3>分类结构</h3>
             <div class="header-actions">
-              <el-button 
-                type="primary" 
-                size="small" 
-                @click="showAddDialog()" 
-                :icon="Plus"
-              >
-                添加分类
-              </el-button>
-              <el-button 
-                size="small" 
-                @click="loadCategories" 
-                :loading="loading" 
-                :icon="Refresh"
-              >
-                刷新
-              </el-button>
+                      <el-button 
+          type="primary" 
+          size="small" 
+          @click="showAddDialog()" 
+          :icon="Plus"
+        >
+          添加分类
+        </el-button>
+        <el-button 
+          size="small" 
+          @click="loadCategories" 
+          :loading="loading" 
+          :icon="Refresh"
+        >
+          刷新
+        </el-button>
+        <el-button 
+          size="small" 
+          @click="checkDataIntegrity" 
+          :loading="checkingIntegrity" 
+          :icon="Setting"
+          type="warning"
+        >
+          检查数据完整性
+        </el-button>
+        <el-button 
+          size="small" 
+          @click="repairDataFiles" 
+          :loading="repairing" 
+          :icon="Setting"
+          type="success"
+        >
+          修复数据文件
+        </el-button>
             </div>
           </div>
           
@@ -450,6 +468,15 @@ const formRef = ref<FormInstance>()
 const categories = ref<Category[]>([])
 const categoryConfig = ref<CategoryConfig | null>(null)
 
+// 数据完整性检查相关
+const checkingIntegrity = ref(false)
+const repairing = ref(false)
+const integrityReport = ref<{
+  missingFiles: string[]
+  totalCategories: number
+  checkedFiles: number
+} | null>(null)
+
 // 表单数据
 const formData = reactive({
   id: '',
@@ -653,6 +680,93 @@ onMounted(() => {
   loadCategories()
 })
 
+// 检查数据完整性
+async function checkDataIntegrity() {
+  if (!categoryConfig.value) {
+    ElMessage.warning('请先加载分类数据')
+    return
+  }
+
+  checkingIntegrity.value = true
+  
+  try {
+    const getAllCategoryIds = (cats: Category[]): string[] => {
+      const ids: string[] = []
+      for (const cat of cats) {
+        ids.push(cat.id)
+        if (cat.children) {
+          ids.push(...getAllCategoryIds(cat.children))
+        }
+      }
+      return ids
+    }
+
+    const allIds = getAllCategoryIds(categoryConfig.value.categories)
+    const missingFiles: string[] = []
+
+    ElMessage.info(`开始检查 ${allIds.length} 个分类的数据文件完整性`)
+
+    // 检查每个分类的数据文件
+    for (const categoryId of allIds) {
+      try {
+        const exists = await dataService.checkCategoryDataFile(categoryId)
+        if (!exists) {
+          missingFiles.push(categoryId)
+        }
+      } catch (error) {
+        console.warn(`检查分类数据文件失败: ${categoryId}`, error)
+        missingFiles.push(categoryId)
+      }
+    }
+
+    integrityReport.value = {
+      totalCategories: allIds.length,
+      checkedFiles: allIds.length,
+      missingFiles
+    }
+
+    if (missingFiles.length === 0) {
+      ElMessage.success('数据完整性检查通过，所有分类都有对应的数据文件')
+    } else {
+      ElMessage.warning(`发现 ${missingFiles.length} 个分类缺少数据文件`)
+      console.warn('缺少数据文件的分类:', missingFiles)
+    }
+
+  } catch (error) {
+    console.error('数据完整性检查失败:', error)
+    ElMessage.error('数据完整性检查失败')
+  } finally {
+    checkingIntegrity.value = false
+  }
+}
+
+// 修复数据文件
+async function repairDataFiles() {
+  if (!categoryConfig.value) {
+    ElMessage.warning('请先加载分类数据')
+    return
+  }
+
+  repairing.value = true
+
+  try {
+    ElMessage.info('开始修复缺失的数据文件')
+    
+    await dataService.ensureAllCategoryDataFiles(categoryConfig.value)
+    
+    ElMessage.success('数据文件修复完成')
+    
+    // 重新检查完整性
+    await checkDataIntegrity()
+    
+  } catch (error) {
+    console.error('修复数据文件失败:', error)
+    ElMessage.error('修复数据文件失败')
+  } finally {
+    repairing.value = false
+  }
+}
+
 // 加载分类数据
 async function loadCategories() {
   loading.value = true
@@ -845,7 +959,38 @@ async function addCategory() {
     categoryConfig.value.categories.sort((a, b) => a.order - b.order)
   }
   
-  await dataService.updateCategories(categoryConfig.value)
+  try {
+    // 1. 更新分类配置
+    await dataService.updateCategories(categoryConfig.value)
+    
+    // 2. 创建对应的数据文件（关键步骤！）
+    await dataService.createCategoryDataFile(newCategory.id, [])
+    
+    console.log(`✅ 分类添加成功，已创建数据文件: ${newCategory.id}`)
+    
+    // 3. 通知前端清除缓存（如果前端已经切换到GitHub数据源）
+    try {
+      // 这里可以添加前端缓存清理逻辑
+      console.log('🔄 建议前端清除缓存以获取最新数据')
+    } catch (cacheError) {
+      console.warn('前端缓存清理失败:', cacheError)
+    }
+    
+  } catch (error) {
+    console.error('添加分类失败:', error)
+    
+    // 如果创建数据文件失败，回滚分类配置
+    if (parentCategory.value) {
+      const parent = findCategoryById(parentCategory.value.id)
+      if (parent?.children) {
+        parent.children = parent.children.filter(c => c.id !== newCategory.id)
+      }
+    } else {
+      categoryConfig.value.categories = categoryConfig.value.categories.filter(c => c.id !== newCategory.id)
+    }
+    
+    throw error
+  }
 }
 
 // 更新分类
