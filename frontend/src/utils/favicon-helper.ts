@@ -54,8 +54,8 @@ const FAVICON_SOURCES = [
   }
 ]
 
-// 本地默认图标
-const DEFAULT_FAVICON = '/assets/default-favicon.svg'
+// 本地默认图标 - 使用内联SVG避免404问题
+const DEFAULT_FAVICON = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiByeD0iNCIgZmlsbD0iIzY2N2VlYSIvPgo8cGF0aCBkPSJNMTYgOEMxMi42ODYzIDggMTAgMTAuNjg2MyAxMCAxNEMxMCAxNy4zMTM3IDEyLjY4NjMgMjAgMTYgMjBDMTkuMzEzNyAyMCAyMiAxNy4zMTM3IDIyIDE0QzIyIDEwLjY4NjMgMTkuMzEzNyA4IDE2IDhaIiBmaWxsPSJ3aGl0ZSIvPgo8L3N2Zz4K'
 
 // 缓存管理
 const faviconCache = new Map<string, CacheEntry>()
@@ -185,11 +185,13 @@ async function detectNetworkEnvironment(): Promise<void> {
         
         const response = await fetch(source.url('baidu.com'), {
           method: 'HEAD',
-          signal: controller.signal
+          signal: controller.signal,
+          mode: 'no-cors' // 添加no-cors模式避免CORS问题
         })
         
-        return response.ok
-      } catch {
+        return response.ok || response.type === 'opaque' // opaque响应也认为是成功的
+      } catch (error) {
+        console.debug(`检测源 ${sourceName} 失败:`, error)
         return false
       }
     })
@@ -258,15 +260,17 @@ async function validateImageUrl(url: string, sourceName: string, timeout = 5000)
     const response = await fetch(url, {
       method: 'HEAD',
       signal: controller.signal,
-      cache: 'force-cache'
+      cache: 'force-cache',
+      mode: 'no-cors' // 添加no-cors模式处理CORS问题
     })
     
     clearTimeout(timeoutId)
     const responseTime = Date.now() - startTime
     
-    if (response.ok) {
+    if (response.ok || response.type === 'opaque') {
+      // 对于opaque响应，我们无法检查content-type，但假设是有效的
       const contentType = response.headers.get('content-type')
-      const isValid = contentType ? contentType.startsWith('image/') : true
+      const isValid = response.type === 'opaque' || (contentType ? contentType.startsWith('image/') : true)
       
       updateSourceStats(sourceName, isValid, responseTime)
       return isValid

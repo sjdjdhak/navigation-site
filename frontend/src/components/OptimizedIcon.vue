@@ -1,5 +1,6 @@
 <template>
   <div 
+    ref="iconRef"
     class="optimized-icon" 
     :class="{
       'icon-loading': isLoading,
@@ -48,7 +49,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch, nextTick } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { getFaviconUrl } from '@/utils/favicon-helper'
 
 interface Props {
@@ -70,11 +71,12 @@ const props = withDefaults(defineProps<Props>(), {
   alt: '',
   size: 32,
   lazy: false,
-  fallbackIcon: '/assets/default-favicon.svg',
+  fallbackIcon: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiByeD0iNCIgZmlsbD0iIzY2N2VlYSIvPgo8cGF0aCBkPSJNMTYgOEMxMi42ODYzIDggMTAgMTAuNjg2MyAxMCAxNEMxMCAxNy4zMTM3IDEyLjY4NjMgMjAgMTYgMjBDMTkuMzEzNyAyMCAyMiAxNy4zMTM3IDIyIDE0QzIyIDEwLjY4NjMgMTkuMzEzNyA4IDE2IDhaIiBmaWxsPSJ3aGl0ZSIvPgo8L3N2Zz4K',
   borderRadius: 8,
   theme: 'modern'
 })
 
+const iconRef = ref<HTMLElement>()
 const currentIconUrl = ref('')
 const isLoading = ref(false)
 const isLoaded = ref(false)
@@ -82,6 +84,7 @@ const hasError = ref(false)
 const showShine = ref(false)
 const retryCount = ref(0)
 const maxRetries = 3
+const observer = ref<IntersectionObserver>()
 
 // 容器样式
 const containerStyle = computed(() => ({
@@ -247,20 +250,26 @@ watch(
 // 组件挂载
 onMounted(() => {
   if (props.lazy) {
-    const observer = new IntersectionObserver(
+    observer.value = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting) {
           fetchIcon()
-          observer.disconnect()
+          observer.value.disconnect()
         }
       },
       { threshold: 0.1 }
     )
     
-    const element = document.querySelector('.optimized-icon')
-    if (element) {
-      observer.observe(element)
+    if (iconRef.value) {
+      observer.value.observe(iconRef.value)
     }
+  }
+})
+
+// 组件卸载
+onUnmounted(() => {
+  if (observer.value) {
+    observer.value.disconnect()
   }
 })
 
