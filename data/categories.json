@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "lastUpdated": "2025-06-17T09:08:35.085Z",
+  "lastUpdated": "2025-06-17T09:09:05.489Z",
   "config": {
     "defaultExpanded": true,
     "showCounts": true,
@@ -262,6 +262,14 @@
           "order": 2
         }
       ]
+    },
+    {
+      "id": "cat-ab5ssa",
+      "name": "测试",
+      "icon": "Folder",
+      "description": "测试",
+      "order": 6,
+      "children": []
     }
   ]
 }
