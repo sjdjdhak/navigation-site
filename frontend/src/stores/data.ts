@@ -205,20 +205,22 @@ export const useDataStore = defineStore('data', () => {
       loading.value = true
       error.value = null
       
-                    // 获取分类数据
-       const categoriesResponse = await fetch('/data/categories.json')
-       if (!categoriesResponse.ok) {
-         throw new Error(`Failed to fetch categories.json: ${categoriesResponse.status}`)
-       }
-       const rawData = await categoriesResponse.json()
+      // 获取分类数据
+      const categoriesResponse = await fetch('/data/categories.json')
+      if (!categoriesResponse.ok) {
+        throw new Error(`Failed to fetch categories.json: ${categoriesResponse.status}`)
+      }
+      const rawData = await categoriesResponse.json()
       
       // 检查数据格式并适配
-      if (Array.isArray(rawData)) {
-        // 新格式：直接是分类数组
-        rawCategoriesData.value = rawData
-      } else if (rawData.categories) {
-        // 旧格式：包含CategoryConfig结构
+      if (rawData.categories && Array.isArray(rawData.categories)) {
+        // CategoryConfig格式：包含config和categories
         categoryConfig.value = rawData as CategoryConfig
+        console.debug('✅ 加载CategoryConfig格式分类数据，共', rawData.categories.length, '个分类')
+      } else if (Array.isArray(rawData)) {
+        // 直接分类数组格式
+        rawCategoriesData.value = rawData
+        console.debug('✅ 加载分类数组格式数据，共', rawData.length, '个分类')
       } else {
         throw new Error('Invalid categories data format')
       }
@@ -678,13 +680,11 @@ export const useDataStore = defineStore('data', () => {
     const allCategoryIds = getAllCategoryIds()
     preloadProgress.value.total = allCategoryIds.length
     
-    // 检查是否有推荐网站，如果没有则加载第一个分类作为示例
-    const featuredSites = websites.value.filter(w => w.featured)
-    if (featuredSites.length === 0) {
-      const firstCategory = categories.value[0]
-      if (firstCategory) {
-        await loadWebsitesLazy(firstCategory.id)
-      }
+    // 默认加载第一个分类来显示推荐网站
+    const firstCategory = categories.value[0]
+    if (firstCategory) {
+      console.debug('🚀 加载首个分类作为推荐内容:', firstCategory.id)
+      await loadWebsitesLazy(firstCategory.id)
     }
     
     // 根据策略启动不同的预加载方式
