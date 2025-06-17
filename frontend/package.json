@@ -9,7 +9,8 @@
     "build-check": "vue-tsc --noEmit && vite build",
     "preview": "vite preview",
     "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix --ignore-path .gitignore",
-    "vercel-build": "npm run build"
+    "vercel-build": "npm run build",
+    "sync-data": "powershell -ExecutionPolicy Bypass -File sync-data.ps1"
   },
   "dependencies": {
     "@element-plus/icons-vue": "^2.3.1",
