@@ -29,11 +29,15 @@
       >
         <div class="card-header">
           <div class="card-icon">
-            <img 
-              :src="website.icon || getDefaultIcon(website.domain)" 
-              :alt="website.title"
-              @error="handleImageError"
-            >
+            <OptimizedIcon
+              :domain="website.domain"
+              :url="website.url"
+              :title="website.title"
+              :size="48"
+              :border-radius="12"
+              theme="modern"
+              :lazy="true"
+            />
           </div>
           <div class="card-info">
             <h3 class="card-title">{{ website.title }}</h3>
@@ -80,6 +84,7 @@
 import { ref } from 'vue'
 import type { Website } from '@/types'
 import CategoryTag from './CategoryTag.vue'
+import OptimizedIcon from './OptimizedIcon.vue'
 import { useAppStore } from '@/stores/app'
 
 interface Props {
@@ -231,6 +236,10 @@ const createRipple = (event: MouseEvent, element: HTMLElement) => {
     @include card-hover-shadow;
     background-color: var(--card-hover);
     z-index: 10;
+    
+    .card-icon::after {
+      opacity: 1;
+    }
   }
   
   &::after {
@@ -270,22 +279,28 @@ const createRipple = (event: MouseEvent, element: HTMLElement) => {
 }
 
 .card-icon {
-  width: 48px;
-  height: 48px;
-  border-radius: var(--radius-md);
-  background: var(--primary-light);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 24px;
   flex-shrink: 0;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
-  overflow: hidden;
+  position: relative;
   
-  img {
-    width: 32px;
-    height: 32px;
-    object-fit: contain;
+  // 为图标添加辉光效果
+  &::after {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    border-radius: 14px;
+    background: linear-gradient(45deg, 
+      rgba(var(--primary-rgb), 0.2),
+      rgba(var(--primary-rgb), 0.1),
+      transparent,
+      rgba(var(--primary-rgb), 0.1),
+      rgba(var(--primary-rgb), 0.2)
+    );
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    z-index: -1;
   }
 }
 

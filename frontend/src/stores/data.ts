@@ -36,6 +36,11 @@ export const useDataStore = defineStore('data', () => {
   const rawCategoriesData = ref<any[]>([]) // 存储原始数据
   const loading = ref(false)
   const error = ref<string | null>(null)
+  
+  // 懒加载相关状态
+  const loadedCategories = ref<Set<string>>(new Set())
+  const loadingCategories = ref<Set<string>>(new Set())
+  const categoryLoadPromises = ref<Map<string, Promise<void>>>(new Map())
 
   // 计算属性
   const categories = computed(() => {
@@ -150,21 +155,79 @@ export const useDataStore = defineStore('data', () => {
     }
   }
 
+  // 懒加载特定分类的网站数据
+  const loadWebsitesLazy = async (categoryId: string): Promise<void> => {
+    // 如果已经加载或正在加载，返回现有的 Promise
+    if (loadedCategories.value.has(categoryId)) {
+      return Promise.resolve()
+    }
+    
+    if (loadingCategories.value.has(categoryId)) {
+      return categoryLoadPromises.value.get(categoryId) || Promise.resolve()
+    }
+
+    // 创建加载 Promise
+    const loadPromise = (async () => {
+      try {
+        loadingCategories.value.add(categoryId)
+        console.debug(`🔄 懒加载分类数据: ${categoryId}`)
+        
+        const websiteData = await import(`@data/${categoryId}.json`)
+        const data = websiteData.default
+        
+        // 移除旧的相同分类数据，避免重复
+        websites.value = websites.value.filter(w => 
+          !w.categoryPath.includes(categoryId)
+        )
+        
+        // 添加新数据
+        websites.value.push(...data)
+        loadedCategories.value.add(categoryId)
+        
+        console.debug(`✅ 分类数据加载完成: ${categoryId}, 加载了 ${data.length} 个网站`)
+      } catch (err) {
+        console.error(`❌ 分类数据加载失败: ${categoryId}`, err)
+        throw err
+      } finally {
+        loadingCategories.value.delete(categoryId)
+        categoryLoadPromises.value.delete(categoryId)
+      }
+    })()
+
+    categoryLoadPromises.value.set(categoryId, loadPromise)
+    return loadPromise
+  }
+
+  // 批量懒加载多个分类
+  const loadMultipleCategoriesLazy = async (categoryIds: string[]): Promise<void> => {
+    const loadPromises = categoryIds.map(id => loadWebsitesLazy(id))
+    await Promise.allSettled(loadPromises)
+  }
+
+  // 预加载推荐分类（后台静默加载）
+  const preloadPopularCategories = async (): Promise<void> => {
+    const popularCategories = ['design-tools', 'dev-resources', 'productivity']
+    
+    // 延迟预加载，避免影响首屏
+    setTimeout(async () => {
+      try {
+        console.debug('🚀 开始预加载热门分类...')
+        await loadMultipleCategoriesLazy(popularCategories)
+        console.debug('✅ 热门分类预加载完成')
+      } catch (error) {
+        console.debug('⚠️ 预加载失败，但不影响正常使用:', error)
+      }
+    }, 2000)
+  }
+
   const loadWebsites = async (categoryId?: string) => {
     try {
       loading.value = true
       error.value = null
       
       if (categoryId) {
-        // 加载特定分类的网站
-        const websiteData = await import(`@data/${categoryId}.json`)
-        const data = websiteData.default
-        
-        // 替换特定分类的网站
-        websites.value = websites.value.filter(w => 
-          !w.categoryPath.includes(categoryId)
-        )
-        websites.value.push(...data)
+        // 使用懒加载方式加载特定分类
+        await loadWebsitesLazy(categoryId)
       } else {
         // 加载所有网站数据
         const allWebsites: Website[] = []
@@ -174,6 +237,7 @@ export const useDataStore = defineStore('data', () => {
           try {
             const websiteData = await import(`@data/${category.id}.json`)
             allWebsites.push(...websiteData.default)
+            loadedCategories.value.add(category.id)
           } catch (err) {
             console.warn(`Failed to load data for category: ${category.id}`, err)
           }
@@ -295,10 +359,31 @@ export const useDataStore = defineStore('data', () => {
     error.value = null
   }
 
+  // 检查分类是否已加载
+  const isCategoryLoaded = (categoryId: string): boolean => {
+    return loadedCategories.value.has(categoryId)
+  }
+
+  // 检查分类是否正在加载
+  const isCategoryLoading = (categoryId: string): boolean => {
+    return loadingCategories.value.has(categoryId)
+  }
+
   // 初始化数据
   const initialize = async () => {
     await loadCategories()
-    await loadWebsites()
+    // 只加载推荐网站，其他分类按需加载
+    const featuredSites = websites.value.filter(w => w.featured)
+    if (featuredSites.length === 0) {
+      // 如果没有推荐网站，加载第一个分类作为示例
+      const firstCategory = categories.value[0]
+      if (firstCategory) {
+        await loadWebsitesLazy(firstCategory.id)
+      }
+    }
+    
+    // 启动预加载
+    preloadPopularCategories()
   }
 
   return {
@@ -320,6 +405,9 @@ export const useDataStore = defineStore('data', () => {
     // 动作
     loadCategories,
     loadWebsites,
+    loadWebsitesLazy,
+    loadMultipleCategoriesLazy,
+    preloadPopularCategories,
     searchWebsites,
     getWebsitesByPath,
     getWebsitesByExactPath,
@@ -329,6 +417,8 @@ export const useDataStore = defineStore('data', () => {
     updateWebsite,
     removeWebsite,
     clearError,
+    isCategoryLoaded,
+    isCategoryLoading,
     initialize
   }
 }) 

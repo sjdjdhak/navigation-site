@@ -27,6 +27,14 @@ const routes: RouteRecordRaw[] = [
       title: '搜索结果'
     }
   },
+  {
+    path: '/demo/lazy-load',
+    name: 'LazyLoadDemo',
+    component: () => import('@/views/LazyLoadDemo.vue'),
+    meta: {
+      title: '懒加载技术演示'
+    }
+  },
   // 后台管理路由
   {
     path: '/admin/login',
