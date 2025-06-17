@@ -29,7 +29,12 @@ export default defineConfig({
   },
   server: {
     port: 3004,
-    open: true
+    open: true,
+    headers: {
+      'X-Frame-Options': 'DENY',
+      'X-Content-Type-Options': 'nosniff',
+      'X-XSS-Protection': '1; mode=block'
+    }
   },
   build: {
     outDir: 'dist',

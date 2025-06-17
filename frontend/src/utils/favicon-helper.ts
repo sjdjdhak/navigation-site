@@ -5,45 +5,45 @@
 
 import { debug, error, warn } from '@/utils/logger'
 
-// Favicon获取源配置 - 重新排序，国内服务优先
+// Favicon获取源配置 - 调整服务优先级，优先使用稳定的服务
 const FAVICON_SOURCES = [
-  // 国内favicon服务 (优先级最高)
+  // 最稳定的服务优先
   {
-    name: 'iowen',
-    url: (domain: string, size = 64) => `https://api.iowen.cn/favicon/${domain}.png`,
-    timeout: 3000,
+    name: 'google',
+    url: (domain: string, size = 64) => `https://www.google.com/s2/favicons?domain=${domain}&sz=${size}`,
+    timeout: 4000,
     priority: 1
-  },
-  {
-    name: 'starrydns', 
-    url: (domain: string) => `https://api.starrydns.com/tool/favicon?url=${domain}`,
-    timeout: 3000,
-    priority: 2
   },
   {
     name: 'favicon.link',
     url: (domain: string) => `https://favicon.link/favicon/${domain}`,
     timeout: 4000,
-    priority: 3
-  },
-  
-  // 国外服务 (降级使用)
-  {
-    name: 'google',
-    url: (domain: string, size = 64) => `https://www.google.com/s2/favicons?domain=${domain}&sz=${size}`,
-    timeout: 5000,
-    priority: 4
+    priority: 2
   },
   {
     name: 'yandex',
     url: (domain: string) => `https://favicon.yandex.net/favicon/${domain}`,
-    timeout: 5000,
-    priority: 5
+    timeout: 4000,
+    priority: 3
   },
   {
     name: 'duckduckgo',
     url: (domain: string) => `https://icons.duckduckgo.com/ip3/${domain}.ico`,
-    timeout: 5000,
+    timeout: 4000,
+    priority: 4
+  },
+  
+  // 国内服务作为备用（可能不稳定）
+  {
+    name: 'starrydns', 
+    url: (domain: string) => `https://api.starrydns.com/tool/favicon?url=${domain}`,
+    timeout: 3000,
+    priority: 5
+  },
+  {
+    name: 'iowen',
+    url: (domain: string, size = 64) => `https://api.iowen.cn/favicon/${domain}.png`,
+    timeout: 3000,
     priority: 6
   },
   
@@ -251,6 +251,7 @@ function getSortedSources(): typeof FAVICON_SOURCES {
 
 /**
  * 验证图片URL是否可用
+ * 使用GET请求代替HEAD请求，因为一些服务不支持HEAD
  */
 async function validateImageUrl(url: string, sourceName: string, timeout = 5000): Promise<boolean> {
   const startTime = Date.now()
@@ -259,12 +260,25 @@ async function validateImageUrl(url: string, sourceName: string, timeout = 5000)
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), timeout)
     
-    const response = await fetch(url, {
-      method: 'HEAD',
-      signal: controller.signal,
-      cache: 'force-cache',
-      mode: 'no-cors' // 添加no-cors模式处理CORS问题
-    })
+    // 优先尝试HEAD请求，如果失败则使用GET请求
+    let response: Response
+    try {
+      response = await fetch(url, {
+        method: 'HEAD',
+        signal: controller.signal,
+        cache: 'force-cache',
+        mode: 'no-cors'
+      })
+    } catch (headError) {
+      // HEAD请求失败，尝试GET请求
+      console.debug(`HEAD请求失败，尝试GET: ${url}`)
+      response = await fetch(url, {
+        method: 'GET',
+        signal: controller.signal,
+        cache: 'force-cache',
+        mode: 'no-cors'
+      })
+    }
     
     clearTimeout(timeoutId)
     const responseTime = Date.now() - startTime

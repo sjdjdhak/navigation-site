@@ -220,19 +220,21 @@ const handleLoad = async () => {
 
 // 图片加载失败
 const handleError = async () => {
-  console.warn(`🚫 图标加载失败: ${currentIconUrl.value}`)
+  console.error(`🚫 图标加载失败: ${currentIconUrl.value}`)
   
   if (retryCount.value < maxRetries) {
     retryCount.value++
     console.debug(`🔄 重试获取图标 (${retryCount.value}/${maxRetries})`)
     
+    // 使用指数退避策略，减少服务器压力
+    const backoffDelay = Math.min(1000 * Math.pow(2, retryCount.value - 1), 8000)
     setTimeout(() => {
       fetchIcon(true)
-    }, retryCount.value * 1000)
+    }, backoffDelay)
   } else {
     hasError.value = true
     currentIconUrl.value = ''
-    console.debug(`💡 使用默认图标显示`)
+    console.debug(`💡 已达到最大重试次数，使用默认图标显示`)
   }
 }
 
