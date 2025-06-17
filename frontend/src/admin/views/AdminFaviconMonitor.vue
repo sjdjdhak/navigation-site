@@ -171,7 +171,7 @@
       <h2>缓存详情</h2>
       <div class="cache-list">
         <div v-if="stats.cacheEntries.length === 0" class="empty-state">
-          <el-icon><DocumentEmpty /></el-icon>
+          <el-icon><Document /></el-icon>
           <p>暂无缓存数据</p>
         </div>
         <div v-else class="cache-items">
@@ -245,7 +245,7 @@ import {
   Refresh, 
   Delete, 
   RefreshLeft,
-  DocumentEmpty
+  Document
 } from '@element-plus/icons-vue'
 import { 
   getFaviconCacheStats, 
