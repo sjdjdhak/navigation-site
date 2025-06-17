@@ -3,6 +3,8 @@
  * 提供多源获取、错误处理、缓存、智能降级等功能
  */
 
+import { debug, error, warn } from '@/utils/logger'
+
 // Favicon获取源配置 - 重新排序，国内服务优先
 const FAVICON_SOURCES = [
   // 国内favicon服务 (优先级最高)
@@ -139,7 +141,7 @@ function updateSourceStats(sourceName: string, success: boolean, responseTime?: 
   try {
     localStorage.setItem('favicon-source-stats', JSON.stringify(Array.from(sourceStats.entries())))
   } catch (e) {
-    console.debug('Failed to save source stats:', e)
+    debug('Failed to save source stats:', e)
   }
 }
 
@@ -156,7 +158,7 @@ function loadSourceStats() {
       })
     }
   } catch (e) {
-    console.debug('Failed to load source stats:', e)
+    debug('Failed to load source stats:', e)
   }
 }
 
@@ -190,8 +192,8 @@ async function detectNetworkEnvironment(): Promise<void> {
         })
         
         return response.ok || response.type === 'opaque' // opaque响应也认为是成功的
-      } catch (error) {
-        console.debug(`检测源 ${sourceName} 失败:`, error)
+      } catch (err) {
+        debug(`检测源 ${sourceName} 失败:`, err)
         return false
       }
     })

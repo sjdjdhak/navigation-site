@@ -230,7 +230,7 @@ export function useLazyList<T>(
         hasMore.value = false
       }
       
-      items.value.push(...newItems)
+      items.value.push(...(newItems as any))
       page.value++
     } catch (err) {
       error.value = err instanceof Error ? err : new Error(String(err))

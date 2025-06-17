@@ -1,5 +1,6 @@
 // 认证服务
 import { githubApi, type GitHubConfig } from '@/admin/services/github-api'
+import { secureStore, secureRetrieve, secureRemove, isCryptoSupported } from '@/utils/crypto'
 
 export interface AuthState {
   isAuthenticated: boolean
@@ -8,7 +9,8 @@ export interface AuthState {
 }
 
 class AuthService {
-  private readonly STORAGE_KEY = 'github_config'
+  private readonly STORAGE_KEY = 'github_config_encrypted'
+  private readonly LEGACY_KEY = 'github_config' // 旧的明文存储key
   private state: AuthState = {
     isAuthenticated: false,
     user: null,
@@ -42,25 +44,74 @@ class AuthService {
   }
 
   // 从本地存储加载配置
-  private loadFromStorage() {
+  private async loadFromStorage() {
     try {
-      const stored = localStorage.getItem(this.STORAGE_KEY)
-      if (stored) {
-        const config = JSON.parse(stored)
-        this.setConfig(config, false)
+      // 检查是否支持加密
+      if (!isCryptoSupported()) {
+        console.warn('浏览器不支持Web Crypto API，使用明文存储（不推荐）')
+        this.loadLegacyConfig()
+        return
       }
+
+      // 尝试加载加密配置
+      const config = await secureRetrieve(this.STORAGE_KEY)
+      if (config) {
+        await this.setConfig(config, false)
+        return
+      }
+
+      // 如果没有加密配置，尝试迁移旧配置
+      this.migrateLegacyConfig()
     } catch (error) {
       console.error('加载认证配置失败:', error)
       this.clearConfig()
     }
   }
 
-  // 保存配置到本地存储
-  private saveToStorage(config: GitHubConfig) {
+  // 加载旧的明文配置（兼容性）
+  private loadLegacyConfig() {
     try {
-      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(config))
+      const stored = localStorage.getItem(this.LEGACY_KEY)
+      if (stored) {
+        const config = JSON.parse(stored)
+        this.setConfig(config, false)
+      }
+    } catch (error) {
+      console.error('加载旧配置失败:', error)
+    }
+  }
+
+  // 迁移旧配置到加密存储
+  private async migrateLegacyConfig() {
+    try {
+      const stored = localStorage.getItem(this.LEGACY_KEY)
+      if (stored) {
+        const config = JSON.parse(stored)
+        // 保存到加密存储
+        await this.saveToStorage(config)
+        // 删除旧的明文存储
+        localStorage.removeItem(this.LEGACY_KEY)
+        console.info('已成功迁移配置到加密存储')
+        await this.setConfig(config, false)
+      }
+    } catch (error) {
+      console.error('迁移配置失败:', error)
+    }
+  }
+
+  // 保存配置到安全存储
+  private async saveToStorage(config: GitHubConfig) {
+    try {
+      if (isCryptoSupported()) {
+        await secureStore(this.STORAGE_KEY, config)
+      } else {
+        // 降级到明文存储（不推荐，但保证兼容性）
+        console.warn('使用明文存储（不安全）')
+        localStorage.setItem(this.LEGACY_KEY, JSON.stringify(config))
+      }
     } catch (error) {
       console.error('保存认证配置失败:', error)
+      throw new Error('保存认证配置失败')
     }
   }
 
@@ -98,7 +149,7 @@ class AuthService {
       this.state.isAuthenticated = true
       
       if (validate) {
-        this.saveToStorage(config)
+        await this.saveToStorage(config)
       }
       
       this.notify()
@@ -118,8 +169,11 @@ class AuthService {
       config: null
     }
     
-    localStorage.removeItem(this.STORAGE_KEY)
-    // 清除GitHub模式状态标识
+    // 清除所有相关存储
+    if (isCryptoSupported()) {
+      secureRemove(this.STORAGE_KEY)
+    }
+    localStorage.removeItem(this.LEGACY_KEY)
     localStorage.removeItem('admin_mode')
     localStorage.removeItem('admin_login_time')
     this.notify()
@@ -199,21 +253,34 @@ class AuthService {
     // GitHub Personal Access Token格式验证
     // 经典Token: ghp_开头，40字符
     // Fine-grained Token: github_pat_开头
-    return /^(ghp_[a-zA-Z0-9]{36}|github_pat_[a-zA-Z0-9_]+)$/.test(token)
+    const classicPattern = /^ghp_[a-zA-Z0-9]{36}$/
+    const fineGrainedPattern = /^github_pat_[a-zA-Z0-9_]{22,255}$/
+    
+    return classicPattern.test(token) || fineGrainedPattern.test(token)
   }
 
-  // 获取Token创建指南URL
+  // 获取Token使用指南URL
   getTokenGuideUrl(): string {
-    return 'https://docs.github.com/zh/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token'
+    return 'https://docs.github.com/zh/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens'
   }
 
   // 获取所需权限列表
   getRequiredPermissions(): string[] {
     return [
-      'repo - 仓库访问权限',
-      'contents:write - 文件读写权限',
-      'metadata:read - 仓库元数据读取权限'
+      'Contents (读写) - 用于读取和更新仓库内容',
+      'Metadata (读) - 用于访问仓库基本信息'
     ]
+  }
+
+  // 获取安全状态信息
+  getSecurityInfo() {
+    return {
+      cryptoSupported: isCryptoSupported(),
+      storageType: isCryptoSupported() ? 'encrypted' : 'plaintext',
+      recommendation: isCryptoSupported() ? 
+        '您的配置已加密存储，安全性良好' : 
+        '建议升级浏览器以支持加密存储'
+    }
   }
 }
 

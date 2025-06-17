@@ -73,7 +73,7 @@ const placeholderStyle = computed(() => ({
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  flexDirection: 'column'
+  flexDirection: 'column' as const
 }))
 
 // 处理元素进入视窗

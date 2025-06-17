@@ -4,6 +4,26 @@
   <meta charset="UTF-8" />
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <!-- 安全头部 -->
+  <meta http-equiv="X-Frame-Options" content="DENY" />
+  <meta http-equiv="X-Content-Type-Options" content="nosniff" />
+  <meta http-equiv="X-XSS-Protection" content="1; mode=block" />
+  <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin" />
+  <meta http-equiv="Permissions-Policy" content="camera=(), microphone=(), geolocation=()" />
+  
+  <!-- 内容安全策略 (CSP) -->
+  <meta http-equiv="Content-Security-Policy" 
+        content="default-src 'self'; 
+                 script-src 'self' 'unsafe-inline' 'unsafe-eval'; 
+                 style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com; 
+                 font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; 
+                 img-src 'self' data: https: http:; 
+                 connect-src 'self' https://api.github.com https://api.iowen.cn https://api.starrydns.com https://favicon.link https://www.google.com https://favicon.yandex.net https://icons.duckduckgo.com; 
+                 frame-src 'none'; 
+                 object-src 'none'; 
+                 base-uri 'self';" />
+  
   <title>导航站 - 发现优质资源</title>
   
   <!-- Font Awesome -->
