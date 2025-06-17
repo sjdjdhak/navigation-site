@@ -711,6 +711,79 @@ export const useDataStore = defineStore('data', () => {
     }
   }
 
+  // 获取数据源信息
+  const getDataSourceInfo = () => {
+    if (!dataSource.value) {
+      return {
+        type: 'static' as const,
+        isAvailable: true,
+        source: 'StaticDataSource',
+        description: '本地静态文件'
+      }
+    }
+
+    // 根据数据源类型返回相应信息
+    const sourceType = dataSource.value.constructor.name
+    
+    switch (sourceType) {
+      case 'GitHubDataSource':
+        return {
+          type: 'github' as const,
+          isAvailable: dataSource.value.isAvailable(),
+          source: 'GitHubDataSource',
+          description: 'GitHub Raw API'
+        }
+      case 'HybridDataSource':
+        return {
+          type: 'hybrid' as const,
+          isAvailable: dataSource.value.isAvailable(),
+          source: 'HybridDataSource',
+          description: 'GitHub API + 静态文件兜底'
+        }
+      case 'StaticDataSource':
+      default:
+        return {
+          type: 'static' as const,
+          isAvailable: dataSource.value.isAvailable(),
+          source: 'StaticDataSource',
+          description: '本地静态文件'
+        }
+    }
+  }
+
+  // 清除缓存
+  const clearCache = () => {
+    if (dataSource.value && 'clearCache' in dataSource.value) {
+      // @ts-ignore - 某些数据源可能有clearCache方法
+      dataSource.value.clearCache()
+    }
+    
+    // 清除本地的预加载状态
+    clearPreloadState()
+    
+    console.debug('✅ 数据源缓存已清除')
+  }
+
+  // 强制刷新
+  const forceRefresh = async () => {
+    try {
+      // 如果数据源支持强制刷新
+      if (dataSource.value && 'forceGitHubRefresh' in dataSource.value) {
+        // @ts-ignore - HybridDataSource有这个方法
+        await dataSource.value.forceGitHubRefresh()
+      }
+      
+      // 清除缓存并重新加载
+      clearCache()
+      await loadCategories()
+      
+      console.debug('✅ 数据源强制刷新完成')
+    } catch (error) {
+      console.error('❌ 强制刷新失败:', error)
+      throw error
+    }
+  }
+
   return {
     // 数据源
     dataSource: computed(() => dataSource.value),
@@ -751,6 +824,11 @@ export const useDataStore = defineStore('data', () => {
     updatePreloadConfig,
     getPreloadStats,
     clearPreloadState,
+    
+    // 数据源信息
+    getDataSourceInfo,
+    clearCache,
+    forceRefresh,
     
     // 其他方法
     searchWebsites,
