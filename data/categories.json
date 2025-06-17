@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "lastUpdated": "2025-06-17T09:00:11.575Z",
+  "lastUpdated": "2025-06-17T09:01:38.703Z",
   "config": {
     "defaultExpanded": true,
     "showCounts": true,
@@ -269,14 +269,6 @@
       "icon": "Folder",
       "description": "1111",
       "order": 5,
-      "children": []
-    },
-    {
-      "id": "type-formp6",
-      "name": "测试",
-      "icon": "Folder",
-      "description": "不描述了吧",
-      "order": 6,
       "children": []
     }
   ]
