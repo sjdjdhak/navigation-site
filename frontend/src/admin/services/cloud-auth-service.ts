@@ -241,79 +241,60 @@ class CloudAuthService {
   }
 
   // 更新用户最后登录时间
+  // 注意：此功能暂时禁用，避免GitHub API 409冲突影响登录体验
   private async updateLastLoginTime(userConfig: CloudUserConfig): Promise<void> {
     try {
       if (!this.configRepo.token) return
+      
+      // 暂时禁用此功能，因为频繁的409冲突影响用户体验
+      console.log('用户登录时间更新功能已暂时禁用，避免API冲突')
+      return
 
+      // 以下代码保留备用，如需重新启用请移除上面的return语句
       const updatedConfig = {
         ...userConfig,
         lastLoginTime: new Date().toISOString()
       }
 
-      // 先获取文件的SHA值，添加重试机制
       const configPath = `.admin/users/${userConfig.username}.json`
-      const getUrl = `https://api.github.com/repos/${this.configRepo.owner}/${this.configRepo.repo}/contents/${configPath}`
+      const url = `https://api.github.com/repos/${this.configRepo.owner}/${this.configRepo.repo}/contents/${configPath}`
       
-      let retryCount = 0
-      const maxRetries = 3
-      
-      while (retryCount < maxRetries) {
-        try {
-          const getResponse = await fetch(getUrl, {
-            headers: {
-              'Authorization': `token ${this.configRepo.token}`,
-              'Accept': 'application/vnd.github.v3+json'
-            }
-          })
-
-          if (!getResponse.ok) {
-            throw new Error(`获取文件信息失败: ${getResponse.status}`)
-          }
-
-          const fileInfo = await getResponse.json()
-          
-          // 更新文件
-          const updateBody = {
-            message: `更新用户 ${userConfig.username} 最后登录时间`,
-            content: btoa(JSON.stringify(updatedConfig, null, 2)),
-            sha: fileInfo.sha,
-            branch: this.configRepo.branch || 'main'
-          }
-
-          const updateResponse = await fetch(getUrl, {
-            method: 'PUT',
-            headers: {
-              'Authorization': `token ${this.configRepo.token}`,
-              'Accept': 'application/vnd.github.v3+json',
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(updateBody)
-          })
-
-          if (updateResponse.ok) {
-            console.log('成功更新最后登录时间')
-            return // 成功则退出
-          } else if (updateResponse.status === 409) {
-            // 409冲突，等待一段时间后重试
-            retryCount++
-            if (retryCount < maxRetries) {
-              console.warn(`更新冲突，正在重试 ${retryCount}/${maxRetries}`)
-              await new Promise(resolve => setTimeout(resolve, 1000 * retryCount))
-              continue
-            } else {
-              throw new Error('多次重试后仍然冲突，跳过更新')
-            }
-          } else {
-            throw new Error(`更新失败: ${updateResponse.status}`)
-          }
-        } catch (error) {
-          retryCount++
-          if (retryCount >= maxRetries) {
-            throw error
-          }
-          console.warn(`更新失败，准备重试: ${error}`)
-          await new Promise(resolve => setTimeout(resolve, 500 * retryCount))
+      // 获取文件信息
+      const getResponse = await fetch(url, {
+        headers: {
+          'Authorization': `token ${this.configRepo.token}`,
+          'Accept': 'application/vnd.github.v3+json'
         }
+      })
+
+      if (!getResponse.ok) {
+        throw new Error(`获取文件信息失败: ${getResponse.status}`)
+      }
+
+      const fileInfo = await getResponse.json()
+      
+      // 更新文件
+      const updateBody = {
+        message: `更新用户 ${userConfig.username} 最后登录时间`,
+        content: btoa(JSON.stringify(updatedConfig, null, 2)),
+        sha: fileInfo.sha,
+        branch: this.configRepo.branch || 'main'
+      }
+
+      const updateResponse = await fetch(url, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `token ${this.configRepo.token}`,
+          'Accept': 'application/vnd.github.v3+json',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(updateBody)
+      })
+
+      if (updateResponse.ok) {
+        console.log('成功更新最后登录时间')
+      } else {
+        console.warn(`更新最后登录时间失败: ${updateResponse.status}`)
       }
     } catch (error) {
       console.warn('更新最后登录时间失败:', error)
@@ -405,7 +386,8 @@ class CloudAuthService {
       localStorage.setItem('admin_username', username)
       
       // 异步更新最后登录时间（不阻塞登录流程）
-      this.updateLastLoginTime(userConfig).catch(console.warn)
+      // 暂时禁用，避免 409 冲突影响用户体验
+      // this.updateLastLoginTime(userConfig).catch(console.warn)
       
       this.notify()
     } catch (error) {
