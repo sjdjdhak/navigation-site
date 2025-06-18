@@ -116,9 +116,9 @@
         <div style="margin-top: 8px;">
           <p><strong>环境变量状态:</strong></p>
           <ul style="margin: 4px 0; padding-left: 20px;">
-            <li>VITE_CONFIG_REPO_TOKEN: {{ envDebug.token ? '✅ 已设置' : '❌ 未设置' }}</li>
-            <li>VITE_CONFIG_REPO_OWNER: {{ envDebug.owner || '❌ 未设置' }}</li>
-            <li>VITE_CONFIG_REPO_NAME: {{ envDebug.name || '❌ 未设置' }}</li>
+            <li>VITE_CONFIG_REPO_TOKEN: {{ (envDebug && envDebug.token) ? '✅ 已设置' : '❌ 未设置' }}</li>
+            <li>VITE_CONFIG_REPO_OWNER: {{ (envDebug && envDebug.owner) || '❌ 未设置' }}</li>
+            <li>VITE_CONFIG_REPO_NAME: {{ (envDebug && envDebug.name) || '❌ 未设置' }}</li>
           </ul>
           <p><strong>配置状态:</strong> {{ configStatus.hasConfigRepo ? '✅ 已连接' : '❌ 未连接' }}</p>
         </div>
@@ -130,7 +130,6 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted, onUnmounted } from 'vue'
 import { cloudAuthService } from '@/admin/services/cloud-auth-service'
-import ConfigDiagnostic from './ConfigDiagnostic.vue'
 
 // 组件事件
 const emit = defineEmits<{
@@ -155,6 +154,13 @@ const configStatus = ref({
     repo: '',
     hasToken: false
   }
+})
+
+// 环境变量调试信息
+const envDebug = reactive({
+  token: import.meta.env.VITE_CONFIG_REPO_TOKEN || null,
+  owner: import.meta.env.VITE_CONFIG_REPO_OWNER || null,
+  name: import.meta.env.VITE_CONFIG_REPO_NAME || null
 })
 
 // 获取配置状态
