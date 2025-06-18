@@ -64,7 +64,7 @@ interface Props {
 }
 
 interface Emits {
-  (e: 'select', path: string[]): void
+  (e: 'select', path: string[] | null): void
   (e: 'toggle', categoryId: string): void
 }
 
@@ -108,8 +108,18 @@ const currentPath = computed(() => {
 
 // 方法
 const handleClick = () => {
-  // 发出选择事件
-  emit('select', currentPath.value)
+  // 🎯 实现点击切换逻辑
+  // 检查当前分类路径是否与已选中的路径完全匹配
+  const currentlySelected = props.selectedPath.length === currentPath.value.length &&
+    props.selectedPath.every((id, index) => id === currentPath.value[index])
+  
+  if (currentlySelected) {
+    // 如果当前分类已选中，点击取消选中（返回推荐状态）
+    emit('select', null)
+  } else {
+    // 如果当前分类未选中，点击选中该分类
+    emit('select', currentPath.value)
+  }
   
   // 如果有子分类且当前未展开，则展开
   if (hasChildren.value && !isExpanded.value) {
@@ -141,6 +151,7 @@ const toggleExpanded = () => {
   transition: all 0.2s ease;
   position: relative;
   min-height: 40px;
+  cursor: pointer;
   
   &:hover {
     background-color: var(--hover-bg);
@@ -161,6 +172,27 @@ const toggleExpanded = () => {
       color: var(--primary);
       font-weight: 500;
     }
+    
+    &:hover {
+      background-color: var(--primary-light, var(--primary-bg));
+      
+      .category-name {
+        color: var(--primary-dark, var(--primary));
+      }
+      
+      &::after {
+        content: '';
+        position: absolute;
+        right: 8px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 4px;
+        height: 4px;
+        border-radius: 50%;
+        background-color: var(--primary);
+        opacity: 0.6;
+      }
+    }
   }
   
   &.is-active {
@@ -175,6 +207,23 @@ const toggleExpanded = () => {
     
     .expand-icon {
       color: white;
+    }
+    
+    &:hover {
+      background-color: var(--primary-dark, var(--primary));
+      
+      &::after {
+        content: '';
+        position: absolute;
+        right: 8px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 4px;
+        height: 4px;
+        border-radius: 50%;
+        background-color: white;
+        opacity: 0.8;
+      }
     }
   }
 }

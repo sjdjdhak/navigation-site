@@ -41,7 +41,18 @@ const appStore = useAppStore()
 const dataStore = useDataStore()
 
 // 处理分类选择
-const handleCategorySelect = async (path: string[]) => {
+const handleCategorySelect = async (path: string[] | null) => {
+  // 处理取消选中的情况
+  if (path === null) {
+    appStore.setSelectedCategoryPath(null)
+    
+    // 移动端关闭侧边栏
+    if (window.innerWidth <= 768) {
+      appStore.closeSidebar()
+    }
+    return
+  }
+  
   // 设置选中的分类路径
   appStore.setSelectedCategoryPath(path)
   
