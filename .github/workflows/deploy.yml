@@ -37,16 +37,21 @@ jobs:
           cd frontend
           npm ci
           
+      - name: Create .env file
+        run: |
+          cd frontend
+          echo "VITE_CONFIG_REPO_TOKEN=${{ secrets.VITE_CONFIG_REPO_TOKEN }}" > .env
+          echo "VITE_CONFIG_REPO_OWNER=${{ secrets.VITE_CONFIG_REPO_OWNER }}" >> .env
+          echo "VITE_CONFIG_REPO_NAME=${{ secrets.VITE_CONFIG_REPO_NAME }}" >> .env
+          echo "VITE_CONFIG_REPO_BRANCH=${{ secrets.VITE_CONFIG_REPO_BRANCH }}" >> .env
+          echo "Created .env file with environment variables"
+          
       - name: Build
         run: |
           cd frontend
           npm run build
         env:
           NODE_ENV: production
-          VITE_CONFIG_REPO_TOKEN: ${{ secrets.VITE_CONFIG_REPO_TOKEN }}
-          VITE_CONFIG_REPO_OWNER: ${{ secrets.VITE_CONFIG_REPO_OWNER }}
-          VITE_CONFIG_REPO_NAME: ${{ secrets.VITE_CONFIG_REPO_NAME }}
-          VITE_CONFIG_REPO_BRANCH: ${{ secrets.VITE_CONFIG_REPO_BRANCH }}
           
       - name: Setup Pages
         uses: actions/configure-pages@v4
