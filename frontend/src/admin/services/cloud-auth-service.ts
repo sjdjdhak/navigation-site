@@ -40,6 +40,7 @@ class CloudAuthService {
 
   private listeners: Array<(state: CloudAuthState) => void> = []
   private loginAttempts: Record<string, { count: number; lastAttempt: number }> = {}
+  private initPromise: Promise<void> | null = null
   
   // 配置仓库信息（这个可以是硬编码的公共配置）
   private configRepo: CloudConfigRepo = {
@@ -50,12 +51,19 @@ class CloudAuthService {
   }
 
   constructor() {
-    this.initConfigRepo()
-    
+    // 不在constructor中进行异步操作
     // 调试：生成hello123的哈希值
     this.hashPassword('hello123').then(hash => {
       console.log('hello123的SHA-256哈希值:', hash)
     })
+  }
+
+  // 确保服务已初始化
+  private async ensureInitialized(): Promise<void> {
+    if (!this.initPromise) {
+      this.initPromise = this.initConfigRepo()
+    }
+    return this.initPromise
   }
 
   // 初始化配置仓库信息
@@ -285,6 +293,9 @@ class CloudAuthService {
   // 用户登录
   async login(username: string, password: string): Promise<void> {
     try {
+      // 确保服务已初始化
+      await this.ensureInitialized()
+      
       // 检查登录限制
       if (!this.checkLoginRestrictions(username)) {
         throw new Error('账号已被锁定，请稍后再试')
@@ -466,10 +477,21 @@ class CloudAuthService {
 
   // 获取配置状态
   getConfigStatus() {
-    // 检查是否有Token（环境变量或用户配置中的Token）
+    // 先尝试同步获取状态
     const hasToken = !!this.configRepo.token || this.hasUserToken()
     
-    return {
+    // 如果还没有初始化，启动异步初始化但立即返回当前状态
+    if (!this.initPromise) {
+      console.log('开始异步初始化配置...')
+      this.ensureInitialized().then(() => {
+        console.log('异步初始化完成，通知状态更新')
+        this.notify() // 初始化完成后通知所有监听者
+      }).catch(error => {
+        console.error('异步初始化失败:', error)
+      })
+    }
+    
+    const status = {
       hasConfigRepo: hasToken,
       configRepo: {
         owner: this.configRepo.owner,
@@ -477,6 +499,15 @@ class CloudAuthService {
         hasToken: hasToken
       }
     }
+    
+    console.log('getConfigStatus 返回状态:', status)
+    return status
+  }
+
+  // 异步获取配置状态（等待初始化完成）
+  async getConfigStatusAsync() {
+    await this.ensureInitialized()
+    return this.getConfigStatus()
   }
 
   // 检查是否有用户Token可用

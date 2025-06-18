@@ -108,12 +108,23 @@
         </button>
       </p>
     </div>
+
+    <!-- 临时诊断工具 -->
+    <div class="diagnostic-section" style="margin-top: 20px;">
+      <details>
+        <summary style="cursor: pointer; padding: 8px; background: var(--surface-variant); border-radius: 4px;">
+          🔧 显示诊断工具（调试用）
+        </summary>
+        <ConfigDiagnostic />
+      </details>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, onMounted, onUnmounted } from 'vue'
 import { cloudAuthService } from '@/admin/services/cloud-auth-service'
+import ConfigDiagnostic from './ConfigDiagnostic.vue'
 
 // 组件事件
 const emit = defineEmits<{
