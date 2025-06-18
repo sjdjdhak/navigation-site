@@ -110,7 +110,7 @@
 import { ref, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { dataService } from '@/admin/services/data-service'
-import { authService } from '@/admin/services/auth-service'
+import { unifiedAuthService } from '@/admin/services/unified-auth-service'
 
 interface Stats {
   totalSites: number
@@ -142,7 +142,7 @@ const loadStats = async () => {
     loading.value = true
     
     // 检查认证状态
-    const authState = authService.getState()
+    const authState = unifiedAuthService.getState()
     
     if (!authState.isAuthenticated) {
       ElMessage.warning('请先登录')

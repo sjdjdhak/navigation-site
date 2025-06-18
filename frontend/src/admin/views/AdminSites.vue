@@ -167,7 +167,7 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Delete, Refresh, Search } from '@element-plus/icons-vue'
 import { dataService, type Site, type Category } from '@/admin/services/data-service'
-import { authService } from '@/admin/services/auth-service'
+import { unifiedAuthService } from '@/admin/services/unified-auth-service'
 import SiteForm from '@/admin/components/SiteForm.vue'
 
 // 响应式数据
@@ -226,8 +226,8 @@ const loadData = async () => {
   loading.value = true
   try {
     // 检查认证状态
-    const isAuth = await authService.checkAuth()
-    if (!isAuth) {
+    const authState = unifiedAuthService.getState()
+    if (!authState.isAuthenticated) {
       ElMessage.error('请先登录')
       return
     }

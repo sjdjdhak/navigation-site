@@ -65,7 +65,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { authService } from '@/admin/services/auth-service'
+import { unifiedAuthService } from '@/admin/services/unified-auth-service'
 
 interface MenuItem {
   path: string
@@ -79,7 +79,7 @@ const route = useRoute()
 const sidebarCollapsed = ref(false)
 const currentUser = ref('')
 const loginTime = ref('')
-const authState = ref(authService.getState())
+const authState = ref(unifiedAuthService.getState())
 
 const menuItems: MenuItem[] = [
   { path: '/admin/dashboard', title: '仪表盘', icon: 'fas fa-tachometer-alt' },
@@ -119,8 +119,20 @@ const initUserInfo = () => {
   const time = localStorage.getItem('admin_login_time')
   
   if (authState.value.isAuthenticated) {
-    currentUser.value = authState.value.user?.login || authState.value.config?.owner || 'GitHub用户'
+    // 根据不同的认证模式显示用户名
+    if (authState.value.mode === 'cloud-auth') {
+      currentUser.value = authState.value.user?.username || '云端用户'
+    } else if (authState.value.mode === 'github') {
+      currentUser.value = authState.value.user?.login || authState.value.currentConfig?.owner || 'GitHub用户'
+    } else if (authState.value.mode === 'env-auth') {
+      currentUser.value = authState.value.user?.username || '环境变量用户'
+    } else {
+      currentUser.value = '管理员'
+    }
     loginTime.value = time || ''
+  } else {
+    currentUser.value = ''
+    loginTime.value = ''
   }
 }
 
@@ -133,8 +145,8 @@ const goToFrontend = () => {
 }
 
 const handleLogout = () => {
-  // 清除GitHub认证信息
-  authService.logout()
+  // 清除认证信息
+  unifiedAuthService.logout()
   
   emit('logout')
   router.push('/admin/login')
@@ -147,7 +159,7 @@ onMounted(() => {
   initUserInfo()
   
   // 监听认证状态变化
-  unsubscribe = authService.subscribe((state) => {
+  unsubscribe = unifiedAuthService.subscribe((state) => {
     authState.value = state
     initUserInfo()
   })
