@@ -21,7 +21,7 @@ lerna-debug.log*
 .env.production.local
 
 # GitHub Actions结果文件（临时）
-.actions-results/
+# .actions-results/
 
 # 日志
 *.log

@@ -153,7 +153,7 @@ jobs:
           
           # 提交结果文件
           echo "Adding result file to git..."
-          git add .actions-results/"${RESULT_FILE}"
+          git add -f .actions-results/"${RESULT_FILE}"
           
           echo "Committing result file..."
           if git commit -m "Add API result: ${RESULT_FILE}"; then

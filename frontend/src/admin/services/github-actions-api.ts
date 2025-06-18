@@ -104,7 +104,18 @@ class GitHubActionsAPI {
                 // 如果没有找到结果文件，返回成功但无数据
                 return { status: 'success', data: null };
               } else {
-                return { status: 'error', error: `工作流执行失败: ${recentRun.conclusion}` };
+                console.error('工作流执行失败详情:', {
+                  runId: recentRun.id,
+                  conclusion: recentRun.conclusion,
+                  status: recentRun.status,
+                  url: recentRun.html_url,
+                  createdAt: recentRun.created_at,
+                  updatedAt: recentRun.updated_at
+                });
+                return { 
+                  status: 'error', 
+                  error: `工作流执行失败: ${recentRun.conclusion}。请查看详细日志: ${recentRun.html_url}` 
+                };
               }
             }
           }
