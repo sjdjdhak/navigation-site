@@ -33,11 +33,38 @@
       </el-form-item>
 
       <el-form-item label="分类" prop="categoryPath">
+        <!-- 分类选择模式切换 -->
+        <div class="category-mode-selector">
+          <div class="mode-switch">
+            <el-radio-group v-model="categorySelectMode" size="small">
+              <el-radio-button label="strict">精确模式</el-radio-button>
+              <el-radio-button label="flexible">灵活模式</el-radio-button>
+            </el-radio-group>
+            <el-tooltip 
+              :content="categorySelectMode === 'strict' ? '只能选择最底层分类' : '可以选择任意层级分类'" 
+              placement="top"
+            >
+              <el-icon class="mode-help-icon">
+                <QuestionFilled />
+              </el-icon>
+            </el-tooltip>
+          </div>
+          <div class="mode-description">
+            <span v-if="categorySelectMode === 'strict'" class="mode-desc">
+              精确模式：只能选择到最底层的具体分类
+            </span>
+            <span v-else class="mode-desc">
+              灵活模式：可以选择任意层级的分类，包括父级分类
+            </span>
+          </div>
+        </div>
+        
+        <!-- 分类级联选择器 -->
         <el-cascader
           v-model="formData.categoryPath"
           :options="categoryOptions"
           :props="cascaderProps"
-          placeholder="请选择分类"
+          :placeholder="categorySelectMode === 'strict' ? '请选择具体分类' : '请选择分类（可选择任意层级）'"
           style="width: 100%"
         />
       </el-form-item>
@@ -90,7 +117,7 @@
 <script setup lang="ts">
 import { ref, reactive, computed, watch, onMounted } from 'vue'
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
-import { Link } from '@element-plus/icons-vue'
+import { Link, QuestionFilled } from '@element-plus/icons-vue'
 import { dataService, type Site, type Category } from '@/admin/services/data-service'
 import { getFaviconUrl } from '@/utils/favicon-helper'
 
@@ -115,6 +142,7 @@ const formRef = ref<FormInstance>()
 const loading = ref(false)
 const iconLoading = ref(false)
 const categories = ref<Category[]>([])
+const categorySelectMode = ref<'strict' | 'flexible'>('strict')
 
 const isEdit = computed(() => !!props.site)
 
@@ -152,14 +180,14 @@ const rules: FormRules = {
   ]
 }
 
-// 级联选择器配置
-const cascaderProps = {
+// 级联选择器配置 - 根据选择模式动态调整
+const cascaderProps = computed(() => ({
   value: 'id',
   label: 'name',
   children: 'children',
   emitPath: true,
-  checkStrictly: false
-}
+  checkStrictly: categorySelectMode.value === 'flexible'
+}))
 
 // 分类选项
 const categoryOptions = computed(() => {
@@ -188,8 +216,40 @@ const resetForm = () => {
     domain: '',
     featured: false
   })
+  categorySelectMode.value = 'strict' // 重置为默认模式
   formRef.value?.clearValidate()
 }
+
+// 检查分类路径是否为叶子节点
+const isLeafCategory = (path: string[]): boolean => {
+  if (path.length === 0) return false
+  
+  let currentCategories = categories.value
+  for (let i = 0; i < path.length; i++) {
+    const category = currentCategories.find(cat => cat.id === path[i])
+    if (!category) return false
+    
+    if (i === path.length - 1) {
+      // 检查最后一个节点是否有子节点
+      return !category.children || category.children.length === 0
+    }
+    currentCategories = category.children || []
+  }
+  return false
+}
+
+// 监听分类选择模式变化
+watch(categorySelectMode, (newMode, oldMode) => {
+  if (formData.categoryPath.length > 0) {
+    // 从灵活模式切换到精确模式时，检查当前选择是否为叶子节点
+    if (newMode === 'strict' && oldMode === 'flexible') {
+      if (!isLeafCategory(formData.categoryPath)) {
+        ElMessage.warning('精确模式下只能选择最底层分类，当前选择已被清空，请重新选择')
+        formData.categoryPath = []
+      }
+    }
+  }
+})
 
 // 监听网站数据变化
 watch(() => props.site, (newSite) => {
@@ -203,6 +263,11 @@ watch(() => props.site, (newSite) => {
       domain: newSite.domain,
       featured: newSite.featured
     })
+    
+    // 根据当前分类路径智能设置模式（需要等分类数据加载完成）
+    if (newSite.categoryPath.length > 0 && categories.value.length > 0) {
+      categorySelectMode.value = isLeafCategory(newSite.categoryPath) ? 'strict' : 'flexible'
+    }
   } else {
     resetForm()
   }
@@ -292,6 +357,11 @@ const loadCategories = async () => {
   try {
     const categoryConfig = await dataService.getCategories()
     categories.value = categoryConfig.categories
+    
+    // 分类数据加载完成后，如果有现有的分类路径，智能设置模式
+    if (formData.categoryPath.length > 0) {
+      categorySelectMode.value = isLeafCategory(formData.categoryPath) ? 'strict' : 'flexible'
+    }
   } catch (error) {
     console.error('加载分类失败:', error)
     ElMessage.error('加载分类失败')
@@ -344,5 +414,46 @@ onMounted(() => {
 
 :deep(.el-cascader) {
   width: 100%;
+}
+
+.category-mode-selector {
+  margin-bottom: 12px;
+  
+  .mode-switch {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+    
+    .mode-help-icon {
+      color: #909399;
+      cursor: help;
+      font-size: 14px;
+      
+      &:hover {
+        color: #409eff;
+      }
+    }
+  }
+  
+  .mode-description {
+    .mode-desc {
+      font-size: 12px;
+      color: #666;
+      line-height: 1.4;
+    }
+  }
+}
+
+:deep(.el-radio-group) {
+  .el-radio-button {
+    &:first-child .el-radio-button__inner {
+      border-radius: 4px 0 0 4px;
+    }
+    
+    &:last-child .el-radio-button__inner {
+      border-radius: 0 4px 4px 0;
+    }
+  }
 }
 </style> 
