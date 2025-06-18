@@ -259,13 +259,67 @@ class GitHubActionsAPI {
    * 获取用户配置
    */
   async getUserConfig(username: string): Promise<APIResponse> {
-    const payload = {
-      action: 'get-user-config',
-      payload: JSON.stringify({ username })
-    };
+    try {
+      // 尝试直接从GitHub API获取用户配置文件
+      const directResult = await this.getUserConfigDirect(username);
+      if (directResult.status === 'success') {
+        return directResult;
+      }
+      
+      // 如果直接获取失败，回退到工作流方式
+      console.log('直接获取失败，使用工作流方式:', directResult.error);
+      const payload = {
+        action: 'get-user-config',
+        payload: JSON.stringify({ username })
+      };
 
-    const triggerTime = await this.triggerWorkflow(payload);
-    return this.waitForResult(triggerTime);
+      const triggerTime = await this.triggerWorkflow(payload);
+      return this.waitForResult(triggerTime);
+    } catch (error) {
+      console.error('获取用户配置失败:', error);
+      return {
+        status: 'error',
+        error: `获取用户配置失败: ${error instanceof Error ? error.message : 'Unknown error'}`
+      };
+    }
+  }
+
+  /**
+   * 直接从GitHub API获取用户配置
+   */
+  private async getUserConfigDirect(username: string): Promise<APIResponse> {
+    try {
+      const url = `${this.baseUrl}/repos/${this.owner}/${this.repo}/contents/.admin/users/${username}.json`;
+      const response = await fetch(url, {
+        headers: {
+          'Accept': 'application/vnd.github.v3+json',
+          'Authorization': `token ${import.meta.env.VITE_GITHUB_TRIGGER_TOKEN || ''}`
+        }
+      });
+
+      if (response.ok) {
+        const fileInfo = await response.json();
+        // 解码base64内容
+        const content = atob(fileInfo.content);
+        const userConfig = JSON.parse(content);
+        
+        console.log('直接获取用户配置成功:', userConfig);
+        return {
+          status: 'success',
+          data: userConfig
+        };
+      } else {
+        return {
+          status: 'error',
+          error: `用户配置文件不存在 (HTTP: ${response.status})`
+        };
+      }
+    } catch (error) {
+      return {
+        status: 'error',
+        error: `直接获取用户配置失败: ${error instanceof Error ? error.message : 'Unknown error'}`
+      };
+    }
   }
 
   /**
