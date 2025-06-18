@@ -483,6 +483,181 @@ class CloudAuthService {
     return this.hashPassword(password)
   }
 
+  // 更新用户配置
+  async updateUserConfig(updates: {
+    username?: string
+    password?: string
+    currentPassword?: string
+  }): Promise<void> {
+    try {
+      await this.ensureInitialized()
+      
+      const currentUser = this.getCurrentUser()
+      if (!currentUser) {
+        throw new Error('用户未登录')
+      }
+
+      // 如果要修改密码，需要验证当前密码
+      if (updates.password && updates.currentPassword) {
+        const isValidCurrentPassword = await this.verifyPassword(
+          updates.currentPassword, 
+          currentUser.passwordHash
+        )
+        if (!isValidCurrentPassword) {
+          throw new Error('当前密码错误')
+        }
+      }
+
+      // 准备更新的配置
+      const updatedConfig: CloudUserConfig = {
+        ...currentUser,
+        ...(updates.username && { username: updates.username }),
+        ...(updates.password && { passwordHash: await this.hashPassword(updates.password) }),
+        lastLoginTime: new Date().toISOString()
+      }
+
+      // 确定文件路径（如果用户名改变了，需要处理文件移动）
+      const oldPath = `.admin/users/${currentUser.username}.json`
+      const newPath = `.admin/users/${updatedConfig.username}.json`
+      const token = this.getAvailableToken()
+      
+      if (!token) {
+        throw new Error('没有可用的访问令牌')
+      }
+
+      // 如果用户名没有改变，直接更新文件
+      if (currentUser.username === updatedConfig.username) {
+        await this.updateUserFile(newPath, updatedConfig, token)
+      } else {
+        // 如果用户名改变了，需要创建新文件并删除旧文件
+        await this.createUserFile(newPath, updatedConfig, token)
+        await this.deleteUserFile(oldPath, token)
+        
+        // 更新本地存储的用户名
+        localStorage.setItem('admin_username', updatedConfig.username)
+      }
+
+      // 更新本地状态
+      this.state.user = updatedConfig
+      this.notify()
+
+    } catch (error) {
+      console.error('更新用户配置失败:', error)
+      throw error
+    }
+  }
+
+  // 更新用户文件
+  private async updateUserFile(path: string, config: CloudUserConfig, token: string): Promise<void> {
+    const url = `https://api.github.com/repos/${this.configRepo.owner}/${this.configRepo.repo}/contents/${path}`
+    
+    // 获取文件信息
+    const getResponse = await fetch(url, {
+      headers: {
+        'Authorization': `token ${token}`,
+        'Accept': 'application/vnd.github.v3+json'
+      }
+    })
+
+    if (!getResponse.ok) {
+      throw new Error(`获取用户文件失败: ${getResponse.status}`)
+    }
+
+    const fileInfo = await getResponse.json()
+    
+    // 更新文件
+    const updateBody = {
+      message: `更新用户配置: ${config.username}`,
+      content: btoa(JSON.stringify(config, null, 2)),
+      sha: fileInfo.sha,
+      branch: this.configRepo.branch || 'main'
+    }
+
+    const updateResponse = await fetch(url, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `token ${token}`,
+        'Accept': 'application/vnd.github.v3+json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(updateBody)
+    })
+
+    if (!updateResponse.ok) {
+      const errorText = await updateResponse.text()
+      throw new Error(`更新用户文件失败: ${updateResponse.status} - ${errorText}`)
+    }
+  }
+
+  // 创建用户文件
+  private async createUserFile(path: string, config: CloudUserConfig, token: string): Promise<void> {
+    const url = `https://api.github.com/repos/${this.configRepo.owner}/${this.configRepo.repo}/contents/${path}`
+    
+    const createBody = {
+      message: `创建用户配置: ${config.username}`,
+      content: btoa(JSON.stringify(config, null, 2)),
+      branch: this.configRepo.branch || 'main'
+    }
+
+    const response = await fetch(url, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `token ${token}`,
+        'Accept': 'application/vnd.github.v3+json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(createBody)
+    })
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      throw new Error(`创建用户文件失败: ${response.status} - ${errorText}`)
+    }
+  }
+
+  // 删除用户文件
+  private async deleteUserFile(path: string, token: string): Promise<void> {
+    const url = `https://api.github.com/repos/${this.configRepo.owner}/${this.configRepo.repo}/contents/${path}`
+    
+    // 获取文件信息
+    const getResponse = await fetch(url, {
+      headers: {
+        'Authorization': `token ${token}`,
+        'Accept': 'application/vnd.github.v3+json'
+      }
+    })
+
+    if (!getResponse.ok) {
+      // 如果文件不存在，不需要删除
+      if (getResponse.status === 404) return
+      throw new Error(`获取要删除的文件信息失败: ${getResponse.status}`)
+    }
+
+    const fileInfo = await getResponse.json()
+    
+    // 删除文件
+    const deleteBody = {
+      message: `删除旧的用户配置文件: ${path}`,
+      sha: fileInfo.sha,
+      branch: this.configRepo.branch || 'main'
+    }
+
+    const deleteResponse = await fetch(url, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `token ${token}`,
+        'Accept': 'application/vnd.github.v3+json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(deleteBody)
+    })
+
+    if (!deleteResponse.ok) {
+      const errorText = await deleteResponse.text()
+      throw new Error(`删除用户文件失败: ${deleteResponse.status} - ${errorText}`)
+    }
+  }
+
   // 检查服务是否支持
   isSupported(): boolean {
     return true // 云端认证总是支持的
