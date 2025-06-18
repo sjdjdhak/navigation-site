@@ -1,4 +1,5 @@
 import { githubApi, type GitHubConfig } from './github-api'
+import { configService } from './config-service'
 
 // 用户配置接口
 export interface CloudUserConfig {
@@ -50,8 +51,6 @@ class CloudAuthService {
 
   constructor() {
     this.initConfigRepo()
-    // 调试信息：检查配置状态
-    console.log('CloudAuthService 配置状态:', this.getConfigStatus())
     
     // 调试：生成hello123的哈希值
     this.hashPassword('hello123').then(hash => {
@@ -60,66 +59,85 @@ class CloudAuthService {
   }
 
   // 初始化配置仓库信息
-  private initConfigRepo() {
-    // 这里可以从环境变量或其他安全地方获取配置仓库的Token
-    // 这个Token只需要读取配置仓库的权限
-    const configToken = import.meta.env.VITE_CONFIG_REPO_TOKEN
-    const configOwner = import.meta.env.VITE_CONFIG_REPO_OWNER
-    const configRepo = import.meta.env.VITE_CONFIG_REPO_NAME
-    const configBranch = import.meta.env.VITE_CONFIG_REPO_BRANCH
-    
-    // 调试：输出环境变量读取结果
-    console.log('环境变量读取结果:', {
-      VITE_CONFIG_REPO_TOKEN: configToken ? `${configToken.substring(0, 10)}...` : 'undefined',
-      VITE_CONFIG_REPO_OWNER: configOwner,
-      VITE_CONFIG_REPO_NAME: configRepo,
-      VITE_CONFIG_REPO_BRANCH: configBranch
-    })
-    
-    if (configToken) {
-      this.configRepo.token = configToken
+  private async initConfigRepo() {
+    try {
+      // 先从运行时配置加载基础信息
+      const cloudConfig = await configService.getCloudAuthConfig()
+      
+      // 更新仓库基础信息
+      this.configRepo.owner = cloudConfig.configRepo.owner
+      this.configRepo.repo = cloudConfig.configRepo.repo
+      this.configRepo.branch = cloudConfig.configRepo.branch
+      
+      // 尝试从环境变量获取Token（降级方案）
+      const configToken = import.meta.env.VITE_CONFIG_REPO_TOKEN
+      
+      console.log('配置初始化:', {
+        运行时配置: {
+          owner: this.configRepo.owner,
+          repo: this.configRepo.repo,
+          branch: this.configRepo.branch
+        },
+        环境变量Token: configToken ? `${configToken.substring(0, 10)}...` : 'undefined'
+      })
+      
+      if (configToken) {
+        this.configRepo.token = configToken
+      }
+      
+      console.log('配置仓库初始化完成:', {
+        owner: this.configRepo.owner,
+        repo: this.configRepo.repo,
+        hasToken: !!this.configRepo.token,
+        branch: this.configRepo.branch
+      })
+    } catch (error) {
+      console.error('配置初始化失败，使用默认配置:', error)
+      // 使用默认配置作为降级方案
+      this.configRepo = {
+        owner: 'sjdjdhak',
+        repo: 'navigation-site',
+        token: import.meta.env.VITE_CONFIG_REPO_TOKEN || '',
+        branch: 'main'
+      }
     }
-    if (configOwner) {
-      this.configRepo.owner = configOwner
-    }
-    if (configRepo) {
-      this.configRepo.repo = configRepo
-    }
-    if (configBranch) {
-      this.configRepo.branch = configBranch
-    }
-    
-    console.log('最终配置仓库设置:', {
-      owner: this.configRepo.owner,
-      repo: this.configRepo.repo,
-      hasToken: !!this.configRepo.token,
-      branch: this.configRepo.branch
-    })
   }
 
   // 从云端获取用户配置
   private async fetchUserConfig(username: string): Promise<CloudUserConfig | null> {
     try {
-      if (!this.configRepo.token) {
-        throw new Error('配置仓库Token未设置')
+      // 获取可用的Token
+      const availableToken = this.getAvailableToken()
+      
+      if (!availableToken) {
+        // 如果没有Token，尝试使用公开API（仅适用于公开仓库）
+        console.warn('没有可用的Token，尝试使用公开API访问')
       }
 
-      // 创建临时的GitHub API实例用于读取用户配置
-      const configRepoUrl = `https://api.github.com/repos/${this.configRepo.owner}/${this.configRepo.repo}/contents/.admin/users/${username}.json`
+      // 获取运行时配置
+      const cloudConfig = await configService.getCloudAuthConfig()
+      const userConfigPath = `${cloudConfig.userConfigPath}/${username}.json`
       
-      const response = await fetch(configRepoUrl, {
-        headers: {
-          'Authorization': `token ${this.configRepo.token}`,
-          'Accept': 'application/vnd.github.v3+json',
-          'Content-Type': 'application/json'
-        }
-      })
+      // 创建GitHub API请求URL
+      const configRepoUrl = `https://api.github.com/repos/${this.configRepo.owner}/${this.configRepo.repo}/contents/${userConfigPath}`
+      
+      const headers: Record<string, string> = {
+        'Accept': 'application/vnd.github.v3+json',
+        'Content-Type': 'application/json'
+      }
+      
+      // 如果有Token，添加授权头
+      if (availableToken) {
+        headers['Authorization'] = `token ${availableToken}`
+      }
+      
+      const response = await fetch(configRepoUrl, { headers })
 
       if (!response.ok) {
         if (response.status === 404) {
           return null // 用户不存在
         }
-        throw new Error(`获取用户配置失败: ${response.statusText}`)
+        throw new Error(`获取用户配置失败: ${response.status} ${response.statusText}`)
       }
 
       const fileData = await response.json()
@@ -130,7 +148,7 @@ class CloudAuthService {
       
       // 替换GitHub Token占位符
       if (userConfig.githubConfig?.token === '${GITHUB_TOKEN}') {
-        userConfig.githubConfig.token = this.configRepo.token
+        userConfig.githubConfig.token = availableToken || this.configRepo.token
       }
       
       return userConfig
@@ -448,14 +466,37 @@ class CloudAuthService {
 
   // 获取配置状态
   getConfigStatus() {
+    // 检查是否有Token（环境变量或用户配置中的Token）
+    const hasToken = !!this.configRepo.token || this.hasUserToken()
+    
     return {
-      hasConfigRepo: !!this.configRepo.token,
+      hasConfigRepo: hasToken,
       configRepo: {
         owner: this.configRepo.owner,
         repo: this.configRepo.repo,
-        hasToken: !!this.configRepo.token
+        hasToken: hasToken
       }
     }
+  }
+
+  // 检查是否有用户Token可用
+  private hasUserToken(): boolean {
+    // 如果用户已登录，可以使用用户配置中的Token
+    if (this.state.isAuthenticated && this.state.user?.githubConfig?.token) {
+      return true
+    }
+    return false
+  }
+
+  // 获取可用的Token（优先使用用户Token，降级到配置Token）
+  private getAvailableToken(): string | null {
+    // 优先使用当前用户的Token
+    if (this.state.isAuthenticated && this.state.user?.githubConfig?.token) {
+      return this.state.user.githubConfig.token
+    }
+    
+    // 降级使用配置仓库的Token
+    return this.configRepo.token || null
   }
 
   // 设置配置仓库信息（用于动态配置）

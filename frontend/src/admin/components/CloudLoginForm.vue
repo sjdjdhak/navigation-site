@@ -144,6 +144,7 @@ const configStatus = ref({
 const getConfigStatus = () => {
   const status = cloudAuthService.getConfigStatus()
   configStatus.value = status
+  console.log('CloudLoginForm 配置状态更新:', status)
 }
 
 // 处理登录

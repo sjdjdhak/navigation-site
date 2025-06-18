@@ -1,0 +1,21 @@
+{
+  "cloudAuth": {
+    "configRepo": {
+      "owner": "sjdjdhak",
+      "repo": "navigation-site",
+      "branch": "main"
+    },
+    "userConfigPath": ".admin/users",
+    "enabled": true
+  },
+  "app": {
+    "name": "导航站",
+    "version": "1.0.0",
+    "description": "精选设计、开发与创意资源"
+  },
+  "features": {
+    "cloudAuth": true,
+    "envAuth": true,
+    "githubAuth": true
+  }
+} 
