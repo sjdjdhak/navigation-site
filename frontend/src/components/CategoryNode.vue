@@ -40,6 +40,7 @@
         :show-icons="showIcons"
         :show-counts="showCounts"
         :tool-counts="toolCounts"
+        :parent-path="currentPath"
         @select="$emit('select', $event)"
         @toggle="$emit('toggle', $event)"
       />
@@ -59,6 +60,7 @@ interface Props {
   showIcons?: boolean
   showCounts?: boolean
   toolCounts?: Record<string, number>
+  parentPath?: string[]
 }
 
 interface Emits {
@@ -72,7 +74,8 @@ const props = withDefaults(defineProps<Props>(), {
   expandedCategories: () => [],
   showIcons: true,
   showCounts: true,
-  toolCounts: () => ({})
+  toolCounts: () => ({}),
+  parentPath: () => []
 })
 
 const emit = defineEmits<Emits>()
@@ -99,9 +102,8 @@ const toolCount = computed(() => {
 })
 
 const currentPath = computed(() => {
-  // 构建当前节点的完整路径
-  const parentPath = props.selectedPath.slice(0, props.level)
-  return [...parentPath, props.category.id]
+  // 使用父级路径来构建完整路径，而不是依赖selectedPath
+  return [...props.parentPath, props.category.id]
 })
 
 // 方法

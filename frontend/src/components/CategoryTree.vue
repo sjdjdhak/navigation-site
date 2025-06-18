@@ -12,6 +12,7 @@
         :show-icons="showIcons"
         :show-counts="showCounts"
         :tool-counts="toolCounts"
+        :parent-path="[]"
         @select="handleCategorySelect"
         @toggle="handleCategoryToggle"
       />

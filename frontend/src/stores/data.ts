@@ -520,12 +520,26 @@ export const useDataStore = defineStore('data', () => {
 
     // 按分类路径筛选
     if (categoryPath && categoryPath.length > 0) {
+      console.debug(`🔍 按分类路径筛选: [${categoryPath.join(' > ')}]`)
+      console.debug(`📊 总网站数量: ${websites.value.length}`)
+      
       filteredWebsites = filteredWebsites.filter(website => {
         // 检查网站的分类路径是否以指定路径开头
-        return categoryPath.every((id, index) => 
+        const matches = categoryPath.every((id, index) => 
           website.categoryPath[index] === id
         )
+        return matches
       })
+      
+      console.debug(`✅ 筛选后网站数量: ${filteredWebsites.length}`)
+      
+      // 如果没有找到匹配的网站，输出一些调试信息
+      if (filteredWebsites.length === 0) {
+        console.debug('🔍 未找到匹配网站，现有网站的分类路径示例:')
+        websites.value.slice(0, 5).forEach(site => {
+          console.debug(`  - ${site.title}: [${site.categoryPath.join(' > ')}]`)
+        })
+      }
     }
 
     // 搜索筛选

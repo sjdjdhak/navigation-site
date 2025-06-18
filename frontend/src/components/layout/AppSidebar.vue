@@ -41,8 +41,30 @@ const appStore = useAppStore()
 const dataStore = useDataStore()
 
 // 处理分类选择
-const handleCategorySelect = (path: string[]) => {
+const handleCategorySelect = async (path: string[]) => {
+  // 设置选中的分类路径
   appStore.setSelectedCategoryPath(path)
+  
+  // 确保选中分类及其所有父级分类的数据都已加载
+  const categoriesToLoad: string[] = []
+  
+  // 收集需要加载的分类ID（包括路径中的所有分类）
+  for (let i = 0; i < path.length; i++) {
+    const categoryId = path[i]
+    if (!dataStore.isCategoryLoaded(categoryId) && !dataStore.isCategoryLoading(categoryId)) {
+      categoriesToLoad.push(categoryId)
+    }
+  }
+  
+  // 如果有需要加载的分类，先加载数据
+  if (categoriesToLoad.length > 0) {
+    console.debug('🔄 按需加载分类数据:', categoriesToLoad.join(', '))
+    try {
+      await dataStore.loadMultipleCategoriesLazy(categoriesToLoad)
+    } catch (error) {
+      console.error('❌ 按需加载分类数据失败:', error)
+    }
+  }
   
   // 移动端关闭侧边栏
   if (window.innerWidth <= 768) {
