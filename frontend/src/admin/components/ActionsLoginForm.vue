@@ -63,6 +63,12 @@ import { ref, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { actionsAuthService } from '../services/actions-auth-service'
 
+// 定义事件
+const emit = defineEmits<{
+  'login-success': []
+  'switch-mode': [mode: string]
+}>()
+
 const username = ref('')
 const password = ref('')
 const loading = ref(false)
@@ -81,6 +87,9 @@ const handleLogin = async () => {
   try {
     await actionsAuthService.login(username.value, password.value)
     ElMessage.success('登录成功')
+    
+    // 触发登录成功事件，让父组件处理页面跳转
+    emit('login-success')
   } catch (err: any) {
     error.value = err.message || '登录失败'
     ElMessage.error(error.value)
