@@ -24,17 +24,30 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, watch } from 'vue'
 import { useAppStore } from '@/stores/app'
 
 const appStore = useAppStore()
 const searchInputRef = ref<HTMLInputElement>()
 
-// 双向绑定搜索查询
+// 双向绑定搜索查询，并监听store中的变化
 const searchQuery = ref(appStore.searchQuery)
 
+// 监听store中搜索查询的变化，保持同步
+watch(() => appStore.searchQuery, (newQuery) => {
+  searchQuery.value = newQuery
+})
+
 const handleSearch = () => {
+  const trimmedQuery = searchQuery.value.trim()
   appStore.setSearchQuery(searchQuery.value)
+  
+  // 🎯 方案一：搜索时自动清除分类过滤，实现全局搜索
+  // 当用户输入搜索内容时，自动退出分类浏览模式
+  // 但当搜索框清空时，不强制清除分类选择，让用户可以继续浏览分类
+  if (trimmedQuery) {
+    appStore.setSelectedCategoryPath(null)
+  }
 }
 
 const handleEnter = () => {
