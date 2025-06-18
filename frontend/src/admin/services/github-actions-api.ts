@@ -67,7 +67,6 @@ class GitHubActionsAPI {
    */
   private async waitForResult(triggerTime: number, maxWaitTime: number = 60000): Promise<APIResponse> {
     const startTime = Date.now();
-    let lastCheck = triggerTime;
     
     console.log(`开始等待工作流结果，触发时间: ${new Date(triggerTime).toISOString()}`);
     
@@ -96,28 +95,13 @@ class GitHubActionsAPI {
             
             if (recentRun.status === 'completed') {
               if (recentRun.conclusion === 'success') {
-                // 获取artifacts
-                const artifactsUrl = `${this.baseUrl}/repos/${this.owner}/${this.repo}/actions/runs/${recentRun.id}/artifacts`;
-                const artifactsResponse = await fetch(artifactsUrl, {
-                  headers: {
-                    'Accept': 'application/vnd.github.v3+json',
-                    'Authorization': `token ${import.meta.env.VITE_GITHUB_TRIGGER_TOKEN || ''}`
-                  }
-                });
-
-                if (artifactsResponse.ok) {
-                  const artifactsData = await artifactsResponse.json();
-                  const resultArtifact = artifactsData.artifacts.find((a: any) => 
-                    a.name.startsWith('api-response-')
-                  );
-
-                  if (resultArtifact) {
-                    console.log(`找到结果artifact: ${resultArtifact.name}`);
-                    return await this.downloadArtifactResult(resultArtifact.archive_download_url);
-                  }
+                // 尝试从仓库文件读取结果
+                const result = await this.getResultFromRepository(recentRun.id);
+                if (result) {
+                  return result;
                 }
                 
-                // 如果没有找到artifact，返回成功但无数据
+                // 如果没有找到结果文件，返回成功但无数据
                 return { status: 'success', data: null };
               } else {
                 return { status: 'error', error: `工作流执行失败: ${recentRun.conclusion}` };
@@ -139,30 +123,102 @@ class GitHubActionsAPI {
   }
 
   /**
-   * 下载并解析artifact结果
+   * 从仓库文件获取结果
    */
-  private async downloadArtifactResult(downloadUrl: string): Promise<APIResponse> {
-    // 注意：GitHub的artifact下载需要特殊处理，这里简化实现
-    // 实际项目中可能需要使用GitHub REST API或其他方式
+  private async getResultFromRepository(runId: string): Promise<APIResponse | null> {
     try {
-      const response = await fetch(downloadUrl, {
+      // 获取 .actions-results 目录的内容
+      const contentsUrl = `${this.baseUrl}/repos/${this.owner}/${this.repo}/contents/.actions-results`;
+      const response = await fetch(contentsUrl, {
         headers: {
+          'Accept': 'application/vnd.github.v3+json',
           'Authorization': `token ${import.meta.env.VITE_GITHUB_TRIGGER_TOKEN || ''}`
         }
       });
+
+      if (!response.ok) {
+        console.log('Results directory not found or empty');
+        return null;
+      }
+
+      const files = await response.json();
       
-      if (response.ok) {
-        const result = await response.json();
+      // 查找匹配的结果文件
+      const resultFile = files.find((file: any) => 
+        file.name.includes(`api-result-${runId}`) && file.name.endsWith('.json')
+      );
+
+      if (!resultFile) {
+        console.log(`No result file found for run ${runId}`);
+        return null;
+      }
+
+      console.log(`找到结果文件: ${resultFile.name}`);
+
+      // 获取文件内容
+      const fileResponse = await fetch(resultFile.download_url, {
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': `token ${import.meta.env.VITE_GITHUB_TRIGGER_TOKEN || ''}`
+        }
+      });
+
+      if (fileResponse.ok) {
+        const result = await fileResponse.json();
+        console.log('成功获取结果:', result);
+        
+        // 可选：删除结果文件以清理
+        await this.cleanupResultFile(resultFile.path);
+        
         return result;
       }
-      
-      throw new Error('Failed to download result');
+
+      throw new Error('Failed to fetch result file content');
     } catch (error) {
-      console.error('Error downloading artifact:', error);
-      return {
-        status: 'error',
-        error: 'Failed to get action result'
-      };
+      console.error('Error getting result from repository:', error);
+      return null;
+    }
+  }
+
+  /**
+   * 清理结果文件
+   */
+  private async cleanupResultFile(filePath: string): Promise<void> {
+    try {
+      // 获取文件信息以获取SHA
+      const fileInfoUrl = `${this.baseUrl}/repos/${this.owner}/${this.repo}/contents/${filePath}`;
+      const fileInfoResponse = await fetch(fileInfoUrl, {
+        headers: {
+          'Accept': 'application/vnd.github.v3+json',
+          'Authorization': `token ${import.meta.env.VITE_GITHUB_TRIGGER_TOKEN || ''}`
+        }
+      });
+
+      if (fileInfoResponse.ok) {
+        const fileInfo = await fileInfoResponse.json();
+        
+        // 删除文件
+        const deleteResponse = await fetch(fileInfoUrl, {
+          method: 'DELETE',
+          headers: {
+            'Accept': 'application/vnd.github.v3+json',
+            'Authorization': `token ${import.meta.env.VITE_GITHUB_TRIGGER_TOKEN || ''}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            message: `Clean up result file: ${filePath}`,
+            sha: fileInfo.sha
+          })
+        });
+
+        if (deleteResponse.ok) {
+          console.log(`Cleaned up result file: ${filePath}`);
+        } else {
+          console.warn(`Failed to clean up result file: ${filePath}`);
+        }
+      }
+    } catch (error) {
+      console.warn('Error during cleanup:', error);
     }
   }
 

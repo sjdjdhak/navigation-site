@@ -37,6 +37,14 @@
           />
         </div>
         
+        <!-- Actions认证模式 -->
+        <div v-else-if="currentMode === 'actions-auth'" class="auth-form">
+          <ActionsLoginForm 
+            @login-success="handleLoginSuccess" 
+            @switch-mode="currentMode = $event"
+          />
+        </div>
+        
         <!-- 环境变量模式 -->
         <div v-else-if="currentMode === 'env-auth'" class="auth-form">
           <EnvLoginForm 
@@ -56,6 +64,7 @@ import { unifiedAuthService } from '@/admin/services/unified-auth-service'
 import CloudLoginForm from '@/admin/components/CloudLoginForm.vue'
 import GitHubLoginForm from '@/admin/components/GitHubLoginForm.vue'
 import EnvLoginForm from '@/admin/components/EnvLoginForm.vue'
+import ActionsLoginForm from '@/admin/components/ActionsLoginForm.vue'
 
 const router = useRouter()
 
@@ -74,6 +83,7 @@ const availableModes = computed(() => {
 // 获取模式名称
 const getModeName = (mode: string) => {
   const modeNames: Record<string, string> = {
+    'actions-auth': 'Actions认证',
     'cloud-auth': '云端认证',
     'github': 'GitHub直连',
     'env-auth': '环境变量',
@@ -107,9 +117,11 @@ const checkExistingAuth = async () => {
 onMounted(() => {
   checkExistingAuth()
   
-  // 设置默认认证模式为云端认证（如果可用）
+  // 设置默认认证模式为Actions认证（如果可用），这是最安全的选项
   const authState = unifiedAuthService.getState()
-  if (authState.availableModes.includes('cloud-auth')) {
+  if (authState.availableModes.includes('actions-auth')) {
+    currentMode.value = 'actions-auth'
+  } else if (authState.availableModes.includes('cloud-auth')) {
     currentMode.value = 'cloud-auth'
   } else if (authState.availableModes.length > 0) {
     currentMode.value = authState.availableModes[0]

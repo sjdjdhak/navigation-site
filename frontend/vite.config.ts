@@ -14,6 +14,11 @@ export default defineConfig({
       }
     })
   ],
+  define: {
+    // 修复 process is not defined 错误
+    'process.env': {},
+    global: 'globalThis',
+  },
   resolve: {
     alias: {
       '@': resolve(__dirname, 'src'),

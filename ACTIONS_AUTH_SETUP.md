@@ -35,7 +35,7 @@ GitHub Actions认证系统提供了一个安全的"伪后端"解决方案，将�
 
 ```bash
 # GitHub Actions触发Token（只需要actions权限）
-VITE_GITHUB_TRIGGER_TOKEN=你刚生成的触发Token
+VITE_GITHUB_TRIGGER_TOKEN=[你的Actions触发Token]
 
 # 保留原有配置用于向后兼容
 VITE_CONFIG_REPO_TOKEN=[你的完整权限GitHub Token]

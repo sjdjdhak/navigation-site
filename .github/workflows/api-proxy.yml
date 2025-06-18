@@ -105,10 +105,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN_ADMIN }}
 
-      - name: Create result artifact
+      - name: Create and upload result to repository
         run: |
-          mkdir -p results
-          
           # 获取输出值，处理空值情况
           STATUS="${{ steps.api.outputs.result }}"
           DATA="${{ steps.api.outputs.data }}"
@@ -124,21 +122,39 @@ jobs:
             ERROR=""
           fi
           
-          # 生成JSON文件，确保正确的JSON格式
-          cat > results/api-response.json << EOF
+          # 生成唯一的结果文件名
+          RESULT_FILE="api-result-${{ github.run_id }}-$(date +%s).json"
+          
+          # 生成JSON结果
+          cat > "${RESULT_FILE}" << EOF
           {
             "status": "${STATUS}",
             "data": ${DATA},
-            "error": "${ERROR}"
+            "error": "${ERROR}",
+            "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "runId": "${{ github.run_id }}"
           }
           EOF
           
           echo "Generated API response:"
-          cat results/api-response.json
-
-      - name: Upload result
-        uses: actions/upload-artifact@v4
-        with:
-          name: api-response-${{ github.run_id }}
-          path: results/api-response.json
-          retention-days: 1 
+          cat "${RESULT_FILE}"
+          
+          # 将结果文件提交到仓库的 .actions-results 目录
+          mkdir -p .actions-results
+          cp "${RESULT_FILE}" .actions-results/
+          
+          # 配置git
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          
+          # 提交结果文件
+          git add .actions-results/"${RESULT_FILE}"
+          git commit -m "Add API result: ${RESULT_FILE}" || echo "No changes to commit"
+          
+          # 推送到仓库
+          git push origin main || echo "Push failed, continuing..."
+          
+          # 输出结果文件路径供前端获取
+          echo "result-file=${RESULT_FILE}" >> $GITHUB_OUTPUT
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN_ADMIN }} 
