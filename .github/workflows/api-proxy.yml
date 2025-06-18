@@ -1,0 +1,84 @@
+name: API Proxy Service
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'API action to perform'
+        required: true
+        type: choice
+        options:
+          - 'validate-user'
+          - 'get-user-config'
+          - 'update-user-config'
+          - 'create-user-config'
+          - 'delete-user-config'
+      payload:
+        description: 'JSON payload for the action'
+        required: false
+        type: string
+
+jobs:
+  api-proxy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Execute API Action
+        id: api
+        run: |
+          echo "Executing action: ${{ github.event.inputs.action }}"
+          
+          # 根据不同的action执行不同的逻辑
+          case "${{ github.event.inputs.action }}" in
+            "validate-user")
+              echo "Validating user credentials..."
+              # 这里添加用户验证逻辑
+              echo "result=success" >> $GITHUB_OUTPUT
+              ;;
+            "get-user-config")
+              echo "Getting user configuration..."
+              # 使用GitHub API获取用户配置
+              curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN_ADMIN }}" \
+                   -H "Accept: application/vnd.github.v3+json" \
+                   "https://api.github.com/repos/${{ github.repository }}/contents/.admin/users/${{ fromJson(github.event.inputs.payload).username }}.json" \
+                   > user_config.json
+              
+              if [ $? -eq 0 ]; then
+                echo "result=success" >> $GITHUB_OUTPUT
+                echo "data=$(cat user_config.json | jq -c .)" >> $GITHUB_OUTPUT
+              else
+                echo "result=error" >> $GITHUB_OUTPUT
+                echo "error=User not found" >> $GITHUB_OUTPUT
+              fi
+              ;;
+            "update-user-config")
+              echo "Updating user configuration..."
+              # 更新用户配置逻辑
+              echo "result=success" >> $GITHUB_OUTPUT
+              ;;
+            *)
+              echo "result=error" >> $GITHUB_OUTPUT
+              echo "error=Unknown action" >> $GITHUB_OUTPUT
+              ;;
+          esac
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN_ADMIN }}
+
+      - name: Create result artifact
+        run: |
+          mkdir -p results
+          echo '{"status":"${{ steps.api.outputs.result }}","data":${{ steps.api.outputs.data || "null" }},"error":"${{ steps.api.outputs.error || "" }}"}' > results/api-response.json
+
+      - name: Upload result
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-response-${{ github.run_id }}
+          path: results/api-response.json
+          retention-days: 1 

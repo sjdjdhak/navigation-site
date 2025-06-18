@@ -156,12 +156,33 @@ class CloudAuthService {
       
       // 重构完整的用户配置，添加缺失的 GitHub token
       // 确保从环境变量或配置中获取有效的 token
-      const effectiveToken = availableToken || this.configRepo.token || import.meta.env.VITE_CONFIG_REPO_TOKEN || storedConfig.githubConfig?.token
+      const availableTokenDebug = {
+        availableToken: availableToken ? `${availableToken.substring(0, 10)}...` : 'null',
+        configRepoToken: this.configRepo.token ? `${this.configRepo.token.substring(0, 10)}...` : 'null',
+        envToken: import.meta.env.VITE_CONFIG_REPO_TOKEN ? `${import.meta.env.VITE_CONFIG_REPO_TOKEN.substring(0, 10)}...` : 'null',
+        storedToken: storedConfig.githubConfig?.token ? `${storedConfig.githubConfig.token.substring(0, 10)}...` : 'null'
+      }
+      
+      console.log('Token 重建调试信息:', availableTokenDebug)
+      
+      // 优先级：环境变量 > 配置token > 可用token > 存储token
+      const effectiveToken = import.meta.env.VITE_CONFIG_REPO_TOKEN || 
+                           this.configRepo.token || 
+                           availableToken || 
+                           storedConfig.githubConfig?.token
       
       if (!effectiveToken) {
-        console.warn('无法获取有效的 GitHub Token，请检查环境变量 VITE_CONFIG_REPO_TOKEN')
-        throw new Error('GitHub Token 配置缺失，请联系管理员')
+        console.error('Token 获取失败详情:', {
+          环境变量: import.meta.env.VITE_CONFIG_REPO_TOKEN ? '存在' : '缺失',
+          配置Token: this.configRepo.token ? '存在' : '缺失',
+          可用Token: availableToken ? '存在' : '缺失',
+          存储Token: storedConfig.githubConfig?.token ? '存在' : '缺失',
+          环境变量详情: Object.keys(import.meta.env).filter(key => key.includes('TOKEN'))
+        })
+        throw new Error('GitHub Token 配置缺失，请检查环境变量 VITE_CONFIG_REPO_TOKEN 是否正确设置')
       }
+      
+      console.log('最终使用的 Token:', `${effectiveToken.substring(0, 10)}...`)
       
       const userConfig: CloudUserConfig = {
         ...storedConfig,

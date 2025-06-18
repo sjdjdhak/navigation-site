@@ -2,10 +2,11 @@
 import { authService, type AuthState } from './auth-service'
 import { envAuthService, type EnvAuthState } from './env-auth-service'
 import { cloudAuthService, type CloudAuthState } from './cloud-auth-service'
+import { actionsAuthService } from './actions-auth-service'
 import type { GitHubConfig } from './github-api'
 
 // 认证模式类型
-export type AuthMode = 'github' | 'env-auth' | 'cloud-auth'
+export type AuthMode = 'github' | 'env-auth' | 'cloud-auth' | 'actions-auth'
 
 // 统一的认证状态接口
 export interface UnifiedAuthState {
@@ -37,23 +38,29 @@ class UnifiedAuthService {
   
   // 认证模式配置
   private authModes: Record<AuthMode, AuthModeConfig> = {
+    'actions-auth': {
+      name: 'Actions认证',
+      description: '使用GitHub Actions作为后端的安全认证',
+      isSupported: () => actionsAuthService.isSupported(),
+      priority: 1
+    },
     'cloud-auth': {
       name: '云端认证',
       description: '简单账号密码登录，配置存储在云端',
       isSupported: () => cloudAuthService.isSupported(),
-      priority: 1
+      priority: 2
     },
     'env-auth': {
       name: '环境变量认证',
       description: '使用环境变量配置的简单登录',
       isSupported: () => envAuthService.isSupported(),
-      priority: 2
+      priority: 3
     },
     'github': {
       name: 'GitHub直连',
       description: '直接输入GitHub配置信息',
       isSupported: () => true,
-      priority: 3
+      priority: 4
     }
   }
 
@@ -104,6 +111,15 @@ class UnifiedAuthService {
     
     try {
       switch (storedMode) {
+        case 'actions-auth':
+          isAuthenticated = await actionsAuthService.checkAuth()
+          if (isAuthenticated) {
+            const actionsState = actionsAuthService.getState()
+            this.state.user = actionsState.user
+            this.state.currentConfig = actionsState.currentConfig
+          }
+          break
+          
         case 'cloud-auth':
           isAuthenticated = await cloudAuthService.checkAuth()
           if (isAuthenticated) {
@@ -146,6 +162,23 @@ class UnifiedAuthService {
 
   // 订阅各个认证服务的状态变化
   private subscribeToAuthServices() {
+    // Actions认证
+    actionsAuthService.subscribe((state) => {
+      if (state.isAuthenticated) {
+        this.state.mode = 'actions-auth'
+        this.state.isAuthenticated = true
+        this.state.user = state.user
+        this.state.currentConfig = state.currentConfig
+        this.notify()
+      } else if (this.state.mode === 'actions-auth') {
+        this.state.mode = null
+        this.state.isAuthenticated = false
+        this.state.user = null
+        this.state.currentConfig = null
+        this.notify()
+      }
+    })
+
     // 云端认证
     cloudAuthService.subscribe((state: CloudAuthState) => {
       if (state.isAuthenticated) {
@@ -224,6 +257,10 @@ class UnifiedAuthService {
   async login(mode: AuthMode, credentials: any): Promise<void> {
     try {
       switch (mode) {
+        case 'actions-auth':
+          await actionsAuthService.login(credentials.username, credentials.password)
+          break
+          
         case 'cloud-auth':
           await cloudAuthService.login(credentials.username, credentials.password)
           break
@@ -252,6 +289,9 @@ class UnifiedAuthService {
   logout() {
     // 清除当前认证模式的状态
     switch (this.state.mode) {
+      case 'actions-auth':
+        actionsAuthService.logout()
+        break
       case 'cloud-auth':
         cloudAuthService.logout()
         break
@@ -277,6 +317,8 @@ class UnifiedAuthService {
     if (!this.state.isAuthenticated) return false
     
     switch (this.state.mode) {
+      case 'actions-auth':
+        return actionsAuthService.hasPermission(permission)
       case 'cloud-auth':
         return cloudAuthService.hasPermission(permission)
       case 'env-auth':
