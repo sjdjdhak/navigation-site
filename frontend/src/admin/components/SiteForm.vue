@@ -263,6 +263,11 @@ watch(() => props.site, (newSite) => {
       domain: newSite.domain,
       featured: newSite.featured
     })
+    
+    // 根据当前分类路径智能设置模式（需要等分类数据加载完成）
+    if (newSite.categoryPath.length > 0 && categories.value.length > 0) {
+      categorySelectMode.value = isLeafCategory(newSite.categoryPath) ? 'strict' : 'flexible'
+    }
   } else {
     resetForm()
   }
@@ -352,6 +357,11 @@ const loadCategories = async () => {
   try {
     const categoryConfig = await dataService.getCategories()
     categories.value = categoryConfig.categories
+    
+    // 分类数据加载完成后，如果有现有的分类路径，智能设置模式
+    if (formData.categoryPath.length > 0) {
+      categorySelectMode.value = isLeafCategory(formData.categoryPath) ? 'strict' : 'flexible'
+    }
   } catch (error) {
     console.error('加载分类失败:', error)
     ElMessage.error('加载分类失败')
@@ -404,5 +414,46 @@ onMounted(() => {
 
 :deep(.el-cascader) {
   width: 100%;
+}
+
+.category-mode-selector {
+  margin-bottom: 12px;
+  
+  .mode-switch {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+    
+    .mode-help-icon {
+      color: #909399;
+      cursor: help;
+      font-size: 14px;
+      
+      &:hover {
+        color: #409eff;
+      }
+    }
+  }
+  
+  .mode-description {
+    .mode-desc {
+      font-size: 12px;
+      color: #666;
+      line-height: 1.4;
+    }
+  }
+}
+
+:deep(.el-radio-group) {
+  .el-radio-button {
+    &:first-child .el-radio-button__inner {
+      border-radius: 4px 0 0 4px;
+    }
+    
+    &:last-child .el-radio-button__inner {
+      border-radius: 0 4px 4px 0;
+    }
+  }
 }
 </style> 
