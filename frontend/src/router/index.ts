@@ -172,6 +172,17 @@ const checkAuth = async (): Promise<boolean> => {
     }
   }
   
+  // 检查Actions认证模式
+  if (adminMode === 'actions-auth') {
+    try {
+      const { actionsAuthService } = await import('@/admin/services/actions-auth-service')
+      const isValid = await actionsAuthService.checkAuth()
+      return isValid
+    } catch (error) {
+      console.error('检查Actions认证状态失败:', error)
+    }
+  }
+  
   return false
 }
 
