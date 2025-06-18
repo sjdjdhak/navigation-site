@@ -1,0 +1,27 @@
+{
+  "version": "1.0.0",
+  "authMode": "github-repo",
+  "security": {
+    "sessionTimeout": 3600,
+    "maxLoginAttempts": 5,
+    "lockoutDuration": 300
+  },
+  "github": {
+    "configRepo": {
+      "owner": "sjdjdhak",
+      "repo": "navigation-site",
+      "branch": "main",
+      "configPath": ".admin"
+    }
+  },
+  "permissions": {
+    "admin": ["read", "write", "manage", "config"],
+    "manager": ["read", "write"],
+    "viewer": ["read"]
+  },
+  "features": {
+    "multiUser": true,
+    "remoteConfig": true,
+    "autoSync": true
+  }
+} 

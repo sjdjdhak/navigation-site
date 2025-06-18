@@ -7,9 +7,42 @@
           <p>导航站数据管理平台</p>
         </div>
         
-        <!-- GitHub模式登录表单 -->
-        <div class="github-mode">
-          <LoginForm @success="handleGitHubSuccess" />
+        <!-- 认证模式选择 -->
+        <div class="auth-mode-selector">
+          <div class="mode-tabs">
+            <button 
+              v-for="mode in availableModes" 
+              :key="mode.key"
+              @click="currentMode = mode.key"
+              :class="['mode-tab', { active: currentMode === mode.key }]"
+            >
+              {{ mode.name }}
+            </button>
+          </div>
+        </div>
+        
+        <!-- 云端认证模式 -->
+        <div v-if="currentMode === 'cloud-auth'" class="auth-form">
+          <CloudLoginForm 
+            @login-success="handleLoginSuccess" 
+            @switch-mode="currentMode = $event"
+          />
+        </div>
+        
+        <!-- GitHub直连模式 -->
+        <div v-else-if="currentMode === 'github'" class="auth-form">
+          <GitHubLoginForm 
+            @success="handleLoginSuccess" 
+            @switch-mode="currentMode = $event"
+          />
+        </div>
+        
+        <!-- 环境变量模式 -->
+        <div v-else-if="currentMode === 'env-auth'" class="auth-form">
+          <EnvLoginForm 
+            @login-success="handleLoginSuccess" 
+            @switch-mode="currentMode = $event"
+          />
         </div>
       </div>
     </div>
@@ -19,13 +52,38 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { authService } from '@/admin/services/auth-service'
-import LoginForm from '@/admin/components/LoginForm.vue'
+import { unifiedAuthService } from '@/admin/services/unified-auth-service'
+import CloudLoginForm from '@/admin/components/CloudLoginForm.vue'
+import GitHubLoginForm from '@/admin/components/GitHubLoginForm.vue'
+import EnvLoginForm from '@/admin/components/EnvLoginForm.vue'
 
 const router = useRouter()
 
-// GitHub模式登录成功
-const handleGitHubSuccess = async () => {
+// 当前认证模式
+const currentMode = ref<string>('cloud-auth')
+
+// 可用的认证模式
+const availableModes = computed(() => {
+  const authState = unifiedAuthService.getState()
+  return authState.availableModes.map(mode => ({
+    key: mode,
+    name: getModeName(mode)
+  }))
+})
+
+// 获取模式名称
+const getModeName = (mode: string) => {
+  const modeNames: Record<string, string> = {
+    'cloud-auth': '云端认证',
+    'github': 'GitHub直连',
+    'env-auth': '环境变量',
+    'repo-auth': '仓库认证'
+  }
+  return modeNames[mode] || mode
+}
+
+// 登录成功处理
+const handleLoginSuccess = async () => {
   // 确保状态完全同步后再跳转
   await new Promise(resolve => setTimeout(resolve, 100))
   
@@ -40,18 +98,22 @@ const handleGitHubSuccess = async () => {
 
 // 检查是否已登录
 const checkExistingAuth = async () => {
-  // 检查GitHub模式
-  const authState = authService.getState()
+  const authState = unifiedAuthService.getState()
   if (authState.isAuthenticated) {
-    const isValid = await authService.checkAuth()
-    if (isValid) {
-      router.push('/admin/dashboard')
-    }
+    router.push('/admin/dashboard')
   }
 }
 
 onMounted(() => {
   checkExistingAuth()
+  
+  // 设置默认认证模式为云端认证（如果可用）
+  const authState = unifiedAuthService.getState()
+  if (authState.availableModes.includes('cloud-auth')) {
+    currentMode.value = 'cloud-auth'
+  } else if (authState.availableModes.length > 0) {
+    currentMode.value = authState.availableModes[0]
+  }
 })
 </script>
 
@@ -94,13 +156,52 @@ onMounted(() => {
   }
 }
 
-.github-mode {
-  :deep(.login-form) {
-    padding: 0;
-  }
+.auth-mode-selector {
+  margin-bottom: 20px;
   
+  .mode-tabs {
+    display: flex;
+    border-radius: 8px;
+    background: #f5f5f5;
+    padding: 4px;
+    
+    .mode-tab {
+      flex: 1;
+      padding: 10px 15px;
+      border: none;
+      background: transparent;
+      color: #666;
+      cursor: pointer;
+      border-radius: 4px;
+      font-size: 14px;
+      transition: all 0.2s;
+      
+      &:hover {
+        color: #333;
+      }
+      
+      &.active {
+        background: white;
+        color: #667eea;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      }
+    }
+  }
+}
+
+.auth-form {
   :deep(.login-header) {
-    display: none;
+    margin-bottom: 15px;
+    
+    h2 {
+      font-size: 20px;
+      margin-bottom: 5px;
+    }
+    
+    .description {
+      font-size: 13px;
+      color: #666;
+    }
   }
 }
 </style> 

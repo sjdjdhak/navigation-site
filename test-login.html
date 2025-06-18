@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登录系统测试</title>
+    <style>
+        body {
+            font-family: 'Microsoft YaHei', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            background: #f9f9f9;
+        }
+        .test-section h3 {
+            margin-top: 0;
+            color: #555;
+        }
+        .code {
+            background: #f4f4f4;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 14px;
+            margin: 10px 0;
+            border-left: 4px solid #007acc;
+        }
+        .success {
+            color: #28a745;
+            font-weight: bold;
+        }
+        .error {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        .info {
+            color: #007bff;
+            font-weight: bold;
+        }
+        ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        li {
+            margin: 5px 0;
+        }
+        .button {
+            display: inline-block;
+            padding: 10px 20px;
+            background: #007acc;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 5px 0;
+        }
+        .button:hover {
+            background: #005a9b;
+        }
+        .highlight {
+            background: #fff3cd;
+            padding: 15px;
+            border-radius: 5px;
+            border-left: 4px solid #ffc107;
+            margin: 15px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 新登录系统测试指南</h1>
+        
+        <div class="test-section">
+            <h3>📋 系统概述</h3>
+            <p>新的登录系统已经实现，主要特点：</p>
+            <ul>
+                <li>✅ 简化的账号密码登录界面</li>
+                <li>✅ 配置信息存储在GitHub仓库中</li>
+                <li>✅ 支持多用户权限管理</li>
+                <li>✅ 自动加载对应的GitHub配置</li>
+                <li>✅ 安全的密码哈希存储</li>
+            </ul>
+        </div>
+
+        <div class="test-section">
+            <h3>🧪 测试步骤</h3>
+            
+            <h4>1. 准备配置文件</h4>
+            <div class="code">
+# 复制配置文件
+cp .admin/config.example.json .admin/config.json
+cp .admin/users/admin.example.json .admin/users/admin.json
+            </div>
+
+            <h4>2. 生成密码哈希</h4>
+            <div class="code">
+# 为密码 "hello123" 生成哈希
+node .admin/generate-password-hash.js hello123
+            </div>
+
+            <h4>3. 配置GitHub Token</h4>
+            <p>编辑 <code>.admin/users/admin.json</code>，将 <code>"ghp_your_token_here"</code> 替换为实际的GitHub Token。</p>
+
+            <h4>4. 访问登录页面</h4>
+            <a href="/admin/login" class="button" target="_blank">🚀 访问后台登录</a>
+        </div>
+
+        <div class="test-section">
+            <h3>🔑 测试账号信息</h3>
+            <div class="highlight">
+                <strong>默认测试账号：</strong><br>
+                用户名: <code>admin</code><br>
+                密码: <code>hello123</code>
+            </div>
+            <p><em>注意：这只是示例密码，实际部署时请修改为安全密码。</em></p>
+        </div>
+
+        <div class="test-section">
+            <h3>📁 文件结构</h3>
+            <div class="code">
+.admin/
+├── README.md                    # 说明文档
+├── DEPLOYMENT.md               # 部署指南
+├── config.example.json         # 配置模板
+├── generate-password-hash.js   # 密码哈希工具
+├── templates/
+│   └── user.template.json     # 用户配置模板
+└── users/
+    ├── .gitkeep              # 保持目录
+    └── admin.example.json    # 管理员配置模板
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>🛠 如果遇到问题</h3>
+            <ul>
+                <li><span class="error">登录失败</span> → 检查密码哈希和用户配置</li>
+                <li><span class="error">网络错误</span> → 确认GitHub仓库配置正确</li>
+                <li><span class="error">权限错误</span> → 验证GitHub Token权限</li>
+                <li><span class="info">配置丢失</span> → 重新复制示例配置文件</li>
+            </ul>
+        </div>
+
+        <div class="test-section">
+            <h3>🎯 下一步</h3>
+            <p>系统测试成功后，建议：</p>
+            <ol>
+                <li>修改默认密码为更安全的密码</li>
+                <li>配置实际的GitHub Token</li>
+                <li>根据需要添加更多用户账号</li>
+                <li>推送配置到GitHub仓库</li>
+            </ol>
+        </div>
+
+        <div style="text-align: center; margin-top: 30px;">
+            <a href="/admin/login" class="button">🔓 开始测试登录</a>
+        </div>
+    </div>
+
+    <script>
+        // 简单的页面交互
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🎉 新登录系统测试页面已加载');
+            console.log('📚 查看 .admin/DEPLOYMENT.md 获取详细部署说明');
+        });
+    </script>
+</body>
+</html> 

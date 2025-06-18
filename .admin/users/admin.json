@@ -1,0 +1,25 @@
+{
+  "username": "admin",
+  "passwordHash": "27cc6994fc1c01ce6659c6bddca9b69c4c6a9418065e612c69d110b3f7b11f8a",
+  "role": "admin",
+  "permissions": ["read", "write", "manage", "config"],
+  "createdAt": "2024-01-01T00:00:00.000Z",
+  "lastLogin": null,
+  "active": true,
+  "githubConfig": {
+    "owner": "sjdjdhak",
+    "repo": "navigation-site",
+    "token": "${GITHUB_TOKEN}",
+    "branch": "main",
+    "dataPath": "data"
+  },
+  "settings": {
+    "autoSave": true,
+    "backupOnChange": true,
+    "notifications": true
+  },
+  "metadata": {
+    "description": "默认超级管理员账号",
+    "email": "admin@example.com"
+  }
+} 
