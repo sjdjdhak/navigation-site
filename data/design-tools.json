@@ -270,5 +270,20 @@
     "id": "baidu1",
     "createdAt": "2025-06-18T03:39:00.597Z",
     "updatedAt": "2025-06-18T03:39:00.597Z"
+  },
+  {
+    "title": "bd",
+    "url": "https://www.baidu.com/",
+    "description": "1111",
+    "categoryPath": [
+      "design-tools"
+    ],
+    "tags": [],
+    "icon": "https://favicon.yandex.net/favicon/baidu.com",
+    "domain": "baidu.com",
+    "featured": false,
+    "id": "bd",
+    "createdAt": "2025-06-18T03:55:03.567Z",
+    "updatedAt": "2025-06-18T03:55:03.567Z"
   }
 ]
