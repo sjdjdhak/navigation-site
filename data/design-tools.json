@@ -237,5 +237,21 @@
     "featured": false,
     "createdAt": "2024-01-01T00:00:00Z",
     "updatedAt": "2024-01-01T00:00:00Z"
+  },
+  {
+    "title": "baidu",
+    "url": "https://www.baidu.com/",
+    "description": "百度",
+    "categoryPath": [
+      "design-tools",
+      "ui-design"
+    ],
+    "tags": [],
+    "icon": "https://favicon.yandex.net/favicon/baidu.com",
+    "domain": "baidu.com",
+    "featured": false,
+    "id": "baidu",
+    "createdAt": "2025-06-18T03:36:04.280Z",
+    "updatedAt": "2025-06-18T03:36:04.280Z"
   }
 ]
