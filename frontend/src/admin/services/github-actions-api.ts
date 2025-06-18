@@ -28,8 +28,11 @@ class GitHubActionsAPI {
   /**
    * 触发GitHub Action工作流
    */
-  private async triggerWorkflow(payload: WorkflowDispatchPayload): Promise<string> {
+  private async triggerWorkflow(payload: WorkflowDispatchPayload): Promise<number> {
     const url = `${this.baseUrl}/repos/${this.owner}/${this.repo}/actions/workflows/api-proxy.yml/dispatches`;
+    
+    const triggerTime = Date.now();
+    console.log(`触发工作流: ${payload.action}, 时间: ${new Date(triggerTime).toISOString()}`);
     
     const response = await fetch(url, {
       method: 'POST',
@@ -49,52 +52,90 @@ class GitHubActionsAPI {
     });
 
     if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`工作流触发失败: ${response.status}`, errorText);
       throw new Error(`Failed to trigger workflow: ${response.status}`);
     }
 
-    // 返回工作流运行ID（需要通过其他API获取）
-    return Date.now().toString();
+    console.log('工作流触发成功');
+    // 返回触发时间，用于后续查找对应的运行
+    return triggerTime;
   }
 
   /**
    * 等待工作流完成并获取结果
    */
-  private async waitForResult(runId: string, maxWaitTime: number = 30000): Promise<APIResponse> {
+  private async waitForResult(triggerTime: number, maxWaitTime: number = 60000): Promise<APIResponse> {
     const startTime = Date.now();
+    let lastCheck = triggerTime;
+    
+    console.log(`开始等待工作流结果，触发时间: ${new Date(triggerTime).toISOString()}`);
     
     while (Date.now() - startTime < maxWaitTime) {
       try {
-        // 尝试获取结果 artifact
-        const artifactUrl = `${this.baseUrl}/repos/${this.owner}/${this.repo}/actions/artifacts`;
-        const response = await fetch(artifactUrl, {
+        // 获取最近的工作流运行
+        const runsUrl = `${this.baseUrl}/repos/${this.owner}/${this.repo}/actions/workflows/api-proxy.yml/runs`;
+        const runsResponse = await fetch(runsUrl, {
           headers: {
             'Accept': 'application/vnd.github.v3+json',
             'Authorization': `token ${import.meta.env.VITE_GITHUB_TRIGGER_TOKEN || ''}`
           }
         });
 
-        if (response.ok) {
-          const artifacts = await response.json();
-          const resultArtifact = artifacts.artifacts.find((a: any) => 
-            a.name.startsWith('api-response-') && 
-            a.created_at > new Date(Date.now() - 60000).toISOString() // 最近1分钟创建的
-          );
+        if (runsResponse.ok) {
+          const runsData = await runsResponse.json();
+          
+          // 查找在触发时间之后创建的最新运行
+          const recentRun = runsData.workflow_runs.find((run: any) => {
+            const runTime = new Date(run.created_at).getTime();
+            return runTime >= triggerTime - 5000; // 5秒容错
+          });
 
-          if (resultArtifact) {
-            // 下载并解析结果
-            return await this.downloadArtifactResult(resultArtifact.archive_download_url);
+          if (recentRun) {
+            console.log(`找到工作流运行: ${recentRun.id}, 状态: ${recentRun.status}`);
+            
+            if (recentRun.status === 'completed') {
+              if (recentRun.conclusion === 'success') {
+                // 获取artifacts
+                const artifactsUrl = `${this.baseUrl}/repos/${this.owner}/${this.repo}/actions/runs/${recentRun.id}/artifacts`;
+                const artifactsResponse = await fetch(artifactsUrl, {
+                  headers: {
+                    'Accept': 'application/vnd.github.v3+json',
+                    'Authorization': `token ${import.meta.env.VITE_GITHUB_TRIGGER_TOKEN || ''}`
+                  }
+                });
+
+                if (artifactsResponse.ok) {
+                  const artifactsData = await artifactsResponse.json();
+                  const resultArtifact = artifactsData.artifacts.find((a: any) => 
+                    a.name.startsWith('api-response-')
+                  );
+
+                  if (resultArtifact) {
+                    console.log(`找到结果artifact: ${resultArtifact.name}`);
+                    return await this.downloadArtifactResult(resultArtifact.archive_download_url);
+                  }
+                }
+                
+                // 如果没有找到artifact，返回成功但无数据
+                return { status: 'success', data: null };
+              } else {
+                return { status: 'error', error: `工作流执行失败: ${recentRun.conclusion}` };
+              }
+            }
           }
         }
         
-        // 等待2秒后重试
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        // 等待3秒后重试
+        await new Promise(resolve => setTimeout(resolve, 3000));
+        console.log(`等待中... 已等待 ${Math.round((Date.now() - startTime) / 1000)}s`);
       } catch (error) {
-        console.warn('Waiting for action result:', error);
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        console.warn('等待工作流结果时出错:', error);
+        await new Promise(resolve => setTimeout(resolve, 3000));
       }
     }
 
-    throw new Error('Workflow execution timeout');
+    throw new Error('工作流执行超时，请检查GitHub Actions状态');
   }
 
   /**
@@ -134,8 +175,8 @@ class GitHubActionsAPI {
       payload: JSON.stringify({ username, password })
     };
 
-    const runId = await this.triggerWorkflow(payload);
-    return this.waitForResult(runId);
+    const triggerTime = await this.triggerWorkflow(payload);
+    return this.waitForResult(triggerTime);
   }
 
   /**
@@ -147,8 +188,8 @@ class GitHubActionsAPI {
       payload: JSON.stringify({ username })
     };
 
-    const runId = await this.triggerWorkflow(payload);
-    return this.waitForResult(runId);
+    const triggerTime = await this.triggerWorkflow(payload);
+    return this.waitForResult(triggerTime);
   }
 
   /**
@@ -160,8 +201,8 @@ class GitHubActionsAPI {
       payload: JSON.stringify({ username, config })
     };
 
-    const runId = await this.triggerWorkflow(payload);
-    return this.waitForResult(runId);
+    const triggerTime = await this.triggerWorkflow(payload);
+    return this.waitForResult(triggerTime);
   }
 
   /**
