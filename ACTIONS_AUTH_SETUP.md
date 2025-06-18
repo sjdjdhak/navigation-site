@@ -12,7 +12,7 @@ GitHub Actions认证系统提供了一个安全的"伪后端"解决方案，将�
 2. 点击 "New repository secret"
 3. 添加以下Secret：
    ```
-   Name: GITHUB_TOKEN_ADMIN
+   Name: ADMIN_TOKEN
    Value: [你的完整权限GitHub Token]
    ```
 
