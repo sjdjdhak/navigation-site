@@ -95,14 +95,20 @@ class GitHubActionsAPI {
             
             if (recentRun.status === 'completed') {
               if (recentRun.conclusion === 'success') {
+                console.log('工作流执行成功，尝试获取结果...');
                 // 尝试从仓库文件读取结果
                 const result = await this.getResultFromRepository(recentRun.id);
                 if (result) {
+                  console.log('成功获取工作流结果:', result);
                   return result;
                 }
                 
-                // 如果没有找到结果文件，返回成功但无数据
-                return { status: 'success', data: null };
+                                 console.warn('工作流成功但未找到结果文件，可能Git推送失败');
+                 // 如果没有找到结果文件，返回错误而不是不完整的数据
+                 return { 
+                   status: 'error', 
+                   error: '工作流执行成功但结果文件创建失败，请检查GitHub Actions日志'
+                 };
               } else {
                 console.error('工作流执行失败详情:', {
                   runId: recentRun.id,

@@ -21,6 +21,9 @@ on:
 jobs:
   api-proxy:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write  # 允许写入仓库内容
+      actions: read    # 允许读取Actions
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
