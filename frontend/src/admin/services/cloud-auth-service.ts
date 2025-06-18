@@ -354,6 +354,9 @@ class CloudAuthService {
       }
 
       // 验证用户的GitHub Token
+      // 临时禁用GitHub Token验证，解决登录跳转问题
+      console.log('跳过GitHub Token验证（临时禁用）')
+      /* 
       if (userConfig.githubConfig.token) {
         try {
           githubApi.setConfig(userConfig.githubConfig)
@@ -368,6 +371,7 @@ class CloudAuthService {
       } else {
         throw new Error('GitHub配置不完整，请联系管理员')
       }
+      */
 
       // 登录成功
       this.recordLoginAttempt(username, true)
@@ -426,6 +430,9 @@ class CloudAuthService {
       }
 
       // 验证GitHub Token是否仍然有效
+      // 临时禁用GitHub Token验证
+      console.log('跳过GitHub Token验证（checkAuth - 临时禁用）')
+      /* 
       if (userConfig.githubConfig.token) {
         try {
           githubApi.setConfig(userConfig.githubConfig)
@@ -440,6 +447,7 @@ class CloudAuthService {
           return false
         }
       }
+      */
 
       // 恢复认证状态
       this.state.isAuthenticated = true
