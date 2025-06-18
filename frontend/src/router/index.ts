@@ -133,9 +133,9 @@ const getAuthService = async () => {
 
 // 检查认证状态
 const checkAuth = async (): Promise<boolean> => {
-  // 只检查GitHub模式认证（已移除测试模式）
   const adminMode = localStorage.getItem('admin_mode')
   
+  // 检查GitHub模式认证
   if (adminMode === 'github') {
     try {
       const authSvc = await getAuthService()
@@ -147,6 +147,28 @@ const checkAuth = async (): Promise<boolean> => {
       }
     } catch (error) {
       console.error('检查GitHub认证状态失败:', error)
+    }
+  }
+  
+  // 检查云端认证模式
+  if (adminMode === 'cloud-auth') {
+    try {
+      const { cloudAuthService } = await import('@/admin/services/cloud-auth-service')
+      const isValid = await cloudAuthService.checkAuth()
+      return isValid
+    } catch (error) {
+      console.error('检查云端认证状态失败:', error)
+    }
+  }
+  
+  // 检查环境变量认证模式
+  if (adminMode === 'env-auth') {
+    try {
+      const { envAuthService } = await import('@/admin/services/env-auth-service')
+      const isValid = await envAuthService.checkAuth()
+      return isValid
+    } catch (error) {
+      console.error('检查环境变量认证状态失败:', error)
     }
   }
   
