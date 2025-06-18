@@ -131,12 +131,12 @@ class ActionsAuthService {
         throw new Error('账号已被锁定，请稍后再试');
       }
 
-      // 通过GitHub Actions验证用户
-      const result = await githubActionsAPI.validateUser(username, password);
+      // 通过GitHub Actions获取用户配置
+      const result = await githubActionsAPI.getUserConfig(username);
       
       if (result.status === 'error') {
         this.recordLoginAttempt(username, false);
-        throw new Error(result.error || '登录失败');
+        throw new Error(result.error || '用户不存在');
       }
 
       if (!result.data) {
