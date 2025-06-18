@@ -172,16 +172,19 @@ class GitHubActionsAPI {
 
       console.log(`找到结果文件: ${resultFile.name}`);
 
-      // 获取文件内容
-      const fileResponse = await fetch(resultFile.download_url, {
+      // 使用GitHub API获取文件内容而不是直接下载（避免CORS问题）
+      const fileApiResponse = await fetch(resultFile.url, {
         headers: {
-          'Accept': 'application/json',
+          'Accept': 'application/vnd.github.v3+json',
           'Authorization': `token ${import.meta.env.VITE_GITHUB_TRIGGER_TOKEN || ''}`
         }
       });
 
-      if (fileResponse.ok) {
-        const result = await fileResponse.json();
+      if (fileApiResponse.ok) {
+        const fileInfo = await fileApiResponse.json();
+        // 解码base64内容
+        const content = atob(fileInfo.content);
+        const result = JSON.parse(content);
         console.log('成功获取结果:', result);
         
         // 可选：删除结果文件以清理
