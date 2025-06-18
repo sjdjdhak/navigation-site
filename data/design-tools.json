@@ -249,9 +249,9 @@
     "tags": [],
     "icon": "https://favicon.yandex.net/favicon/baidu.com",
     "domain": "baidu.com",
-    "featured": false,
+    "featured": true,
     "id": "baidu",
     "createdAt": "2025-06-18T03:36:04.280Z",
-    "updatedAt": "2025-06-18T03:36:04.280Z"
+    "updatedAt": "2025-06-18T03:37:35.940Z"
   }
 ]
