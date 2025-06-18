@@ -80,18 +80,28 @@ jobs:
                 exit 0
               fi
               
-              # 使用GitHub API获取用户配置
-              HTTP_STATUS=$(curl -w "%{http_code}" -s -o user_config.json \
-                -H "Authorization: token ${{ secrets.ADMIN_TOKEN }}" \
-                -H "Accept: application/vnd.github.v3+json" \
-                "https://api.github.com/repos/${{ github.repository }}/contents/.admin/users/${USERNAME}.json")
-              
-              if [ "$HTTP_STATUS" = "200" ]; then
+              # 先检查本地文件是否存在
+              if [ -f ".admin/users/${USERNAME}.json" ]; then
+                echo "Found local user config file"
                 echo "result=success" >> $GITHUB_OUTPUT
-                echo "data=$(cat user_config.json | jq -c .)" >> $GITHUB_OUTPUT
+                echo "data=$(cat .admin/users/${USERNAME}.json | jq -c .)" >> $GITHUB_OUTPUT
               else
-                echo "result=error" >> $GITHUB_OUTPUT
-                echo "error=User config not found (HTTP: $HTTP_STATUS)" >> $GITHUB_OUTPUT
+                echo "Local user config not found, trying GitHub API..."
+                # 使用GitHub API获取用户配置
+                HTTP_STATUS=$(curl -w "%{http_code}" -s -o github_response.json \
+                  -H "Authorization: token ${{ secrets.ADMIN_TOKEN }}" \
+                  -H "Accept: application/vnd.github.v3+json" \
+                  "https://api.github.com/repos/${{ github.repository }}/contents/.admin/users/${USERNAME}.json")
+                
+                if [ "$HTTP_STATUS" = "200" ]; then
+                  # 从GitHub API响应中提取并解码文件内容
+                  CONTENT=$(cat github_response.json | jq -r '.content' | base64 -d)
+                  echo "result=success" >> $GITHUB_OUTPUT
+                  echo "data=$(echo "$CONTENT" | jq -c .)" >> $GITHUB_OUTPUT
+                else
+                  echo "result=error" >> $GITHUB_OUTPUT
+                  echo "error=User config not found (HTTP: $HTTP_STATUS)" >> $GITHUB_OUTPUT
+                fi
               fi
               ;;
             "update-user-config")
