@@ -250,40 +250,71 @@ class CloudAuthService {
         lastLoginTime: new Date().toISOString()
       }
 
-      // 先获取文件的SHA值
+      // 先获取文件的SHA值，添加重试机制
       const configPath = `.admin/users/${userConfig.username}.json`
       const getUrl = `https://api.github.com/repos/${this.configRepo.owner}/${this.configRepo.repo}/contents/${configPath}`
       
-      const getResponse = await fetch(getUrl, {
-        headers: {
-          'Authorization': `token ${this.configRepo.token}`,
-          'Accept': 'application/vnd.github.v3+json'
-        }
-      })
-
-      if (!getResponse.ok) {
-        throw new Error('无法获取文件信息')
-      }
-
-      const fileInfo = await getResponse.json()
+      let retryCount = 0
+      const maxRetries = 3
       
-      // 更新文件
-      const updateBody = {
-        message: `更新用户 ${userConfig.username} 最后登录时间`,
-        content: btoa(JSON.stringify(updatedConfig, null, 2)),
-        sha: fileInfo.sha,
-        branch: this.configRepo.branch || 'main'
-      }
+      while (retryCount < maxRetries) {
+        try {
+          const getResponse = await fetch(getUrl, {
+            headers: {
+              'Authorization': `token ${this.configRepo.token}`,
+              'Accept': 'application/vnd.github.v3+json'
+            }
+          })
 
-      await fetch(getUrl, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `token ${this.configRepo.token}`,
-          'Accept': 'application/vnd.github.v3+json',
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(updateBody)
-      })
+          if (!getResponse.ok) {
+            throw new Error(`获取文件信息失败: ${getResponse.status}`)
+          }
+
+          const fileInfo = await getResponse.json()
+          
+          // 更新文件
+          const updateBody = {
+            message: `更新用户 ${userConfig.username} 最后登录时间`,
+            content: btoa(JSON.stringify(updatedConfig, null, 2)),
+            sha: fileInfo.sha,
+            branch: this.configRepo.branch || 'main'
+          }
+
+          const updateResponse = await fetch(getUrl, {
+            method: 'PUT',
+            headers: {
+              'Authorization': `token ${this.configRepo.token}`,
+              'Accept': 'application/vnd.github.v3+json',
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(updateBody)
+          })
+
+          if (updateResponse.ok) {
+            console.log('成功更新最后登录时间')
+            return // 成功则退出
+          } else if (updateResponse.status === 409) {
+            // 409冲突，等待一段时间后重试
+            retryCount++
+            if (retryCount < maxRetries) {
+              console.warn(`更新冲突，正在重试 ${retryCount}/${maxRetries}`)
+              await new Promise(resolve => setTimeout(resolve, 1000 * retryCount))
+              continue
+            } else {
+              throw new Error('多次重试后仍然冲突，跳过更新')
+            }
+          } else {
+            throw new Error(`更新失败: ${updateResponse.status}`)
+          }
+        } catch (error) {
+          retryCount++
+          if (retryCount >= maxRetries) {
+            throw error
+          }
+          console.warn(`更新失败，准备重试: ${error}`)
+          await new Promise(resolve => setTimeout(resolve, 500 * retryCount))
+        }
+      }
     } catch (error) {
       console.warn('更新最后登录时间失败:', error)
       // 不抛出错误，因为这不是关键操作

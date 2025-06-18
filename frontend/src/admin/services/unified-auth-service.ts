@@ -148,33 +148,52 @@ class UnifiedAuthService {
   private subscribeToAuthServices() {
     // 云端认证
     cloudAuthService.subscribe((state: CloudAuthState) => {
-      if (state.isAuthenticated && this.state.mode !== 'cloud-auth') {
+      if (state.isAuthenticated) {
         this.state.mode = 'cloud-auth'
         this.state.isAuthenticated = true
         this.state.user = state.user
         this.state.currentConfig = state.currentConfig
+        this.notify()
+      } else if (this.state.mode === 'cloud-auth') {
+        // 如果云端认证失效且当前模式是云端认证，清除状态
+        this.state.mode = null
+        this.state.isAuthenticated = false
+        this.state.user = null
+        this.state.currentConfig = null
         this.notify()
       }
     })
 
     // 环境变量认证
     envAuthService.subscribe((state: EnvAuthState) => {
-      if (state.isAuthenticated && this.state.mode !== 'env-auth') {
+      if (state.isAuthenticated) {
         this.state.mode = 'env-auth'
         this.state.isAuthenticated = true
         this.state.user = state.user
         this.state.currentConfig = state.currentConfig
+        this.notify()
+      } else if (this.state.mode === 'env-auth') {
+        this.state.mode = null
+        this.state.isAuthenticated = false
+        this.state.user = null
+        this.state.currentConfig = null
         this.notify()
       }
     })
 
     // GitHub直连认证
     authService.subscribe((state: AuthState) => {
-      if (state.isAuthenticated && this.state.mode !== 'github') {
+      if (state.isAuthenticated) {
         this.state.mode = 'github'
         this.state.isAuthenticated = true
         this.state.user = state.user
         this.state.currentConfig = state.config
+        this.notify()
+      } else if (this.state.mode === 'github') {
+        this.state.mode = null
+        this.state.isAuthenticated = false
+        this.state.user = null
+        this.state.currentConfig = null
         this.notify()
       }
     })
