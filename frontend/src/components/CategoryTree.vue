@@ -88,9 +88,6 @@ const flattenedCategories = computed(() => {
 const initializeExpandedState = () => {
   const expanded = new Set<string>()
   
-  // 添加默认展开的分类
-  props.defaultExpanded.forEach(id => expanded.add(id))
-  
   // 从localStorage恢复用户的展开偏好
   try {
     const savedExpanded = localStorage.getItem('expandedCategories')

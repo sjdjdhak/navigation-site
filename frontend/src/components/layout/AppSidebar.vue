@@ -23,7 +23,6 @@
         :show-icons="true"
         :show-counts="true"
         :tool-counts="dataStore.toolCounts"
-        :default-expanded="['design-tools']"
         @select="handleCategorySelect"
         @expand-change="handleExpandChange"
       />
