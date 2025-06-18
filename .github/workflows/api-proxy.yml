@@ -34,38 +34,72 @@ jobs:
         id: api
         run: |
           echo "Executing action: ${{ github.event.inputs.action }}"
+          echo "Payload: ${{ github.event.inputs.payload }}"
+          
+          # 检查GITHUB_TOKEN_ADMIN是否存在
+          if [ -z "${{ secrets.GITHUB_TOKEN_ADMIN }}" ]; then
+            echo "result=error" >> $GITHUB_OUTPUT
+            echo "error=GITHUB_TOKEN_ADMIN secret not configured" >> $GITHUB_OUTPUT
+            exit 0
+          fi
           
           # 根据不同的action执行不同的逻辑
           case "${{ github.event.inputs.action }}" in
             "validate-user")
               echo "Validating user credentials..."
-              # 这里添加用户验证逻辑
-              echo "result=success" >> $GITHUB_OUTPUT
+              
+              # 解析payload中的用户名和密码
+              USERNAME=$(echo '${{ github.event.inputs.payload }}' | jq -r '.username // empty')
+              PASSWORD=$(echo '${{ github.event.inputs.payload }}' | jq -r '.password // empty')
+              
+              if [ -z "$USERNAME" ] || [ -z "$PASSWORD" ]; then
+                echo "result=error" >> $GITHUB_OUTPUT
+                echo "error=Missing username or password" >> $GITHUB_OUTPUT
+                exit 0
+              fi
+              
+              # 简单的用户验证逻辑（这里可以扩展为更复杂的验证）
+              if [ "$USERNAME" = "admin" ] && [ "$PASSWORD" = "hello123" ]; then
+                echo "result=success" >> $GITHUB_OUTPUT
+                echo "data={\"username\":\"$USERNAME\",\"role\":\"admin\"}" >> $GITHUB_OUTPUT
+              else
+                echo "result=error" >> $GITHUB_OUTPUT
+                echo "error=Invalid credentials" >> $GITHUB_OUTPUT
+              fi
               ;;
             "get-user-config")
               echo "Getting user configuration..."
-              # 使用GitHub API获取用户配置
-              curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN_ADMIN }}" \
-                   -H "Accept: application/vnd.github.v3+json" \
-                   "https://api.github.com/repos/${{ github.repository }}/contents/.admin/users/${{ fromJson(github.event.inputs.payload).username }}.json" \
-                   > user_config.json
+              USERNAME=$(echo '${{ github.event.inputs.payload }}' | jq -r '.username // empty')
               
-              if [ $? -eq 0 ]; then
+              if [ -z "$USERNAME" ]; then
+                echo "result=error" >> $GITHUB_OUTPUT
+                echo "error=Missing username" >> $GITHUB_OUTPUT
+                exit 0
+              fi
+              
+              # 使用GitHub API获取用户配置
+              HTTP_STATUS=$(curl -w "%{http_code}" -s -o user_config.json \
+                -H "Authorization: token ${{ secrets.GITHUB_TOKEN_ADMIN }}" \
+                -H "Accept: application/vnd.github.v3+json" \
+                "https://api.github.com/repos/${{ github.repository }}/contents/.admin/users/${USERNAME}.json")
+              
+              if [ "$HTTP_STATUS" = "200" ]; then
                 echo "result=success" >> $GITHUB_OUTPUT
                 echo "data=$(cat user_config.json | jq -c .)" >> $GITHUB_OUTPUT
               else
                 echo "result=error" >> $GITHUB_OUTPUT
-                echo "error=User not found" >> $GITHUB_OUTPUT
+                echo "error=User config not found (HTTP: $HTTP_STATUS)" >> $GITHUB_OUTPUT
               fi
               ;;
             "update-user-config")
               echo "Updating user configuration..."
               # 更新用户配置逻辑
               echo "result=success" >> $GITHUB_OUTPUT
+              echo "data={\"message\":\"Configuration updated\"}" >> $GITHUB_OUTPUT
               ;;
             *)
               echo "result=error" >> $GITHUB_OUTPUT
-              echo "error=Unknown action" >> $GITHUB_OUTPUT
+              echo "error=Unknown action: ${{ github.event.inputs.action }}" >> $GITHUB_OUTPUT
               ;;
           esac
         env:
@@ -74,7 +108,33 @@ jobs:
       - name: Create result artifact
         run: |
           mkdir -p results
-          echo '{"status":"${{ steps.api.outputs.result }}","data":${{ steps.api.outputs.data || "null" }},"error":"${{ steps.api.outputs.error || "" }}"}' > results/api-response.json
+          
+          # 获取输出值，处理空值情况
+          STATUS="${{ steps.api.outputs.result }}"
+          DATA="${{ steps.api.outputs.data }}"
+          ERROR="${{ steps.api.outputs.error }}"
+          
+          # 如果DATA为空，设置为null
+          if [ -z "$DATA" ] || [ "$DATA" = "" ]; then
+            DATA="null"
+          fi
+          
+          # 如果ERROR为空，设置为空字符串
+          if [ -z "$ERROR" ]; then
+            ERROR=""
+          fi
+          
+          # 生成JSON文件，确保正确的JSON格式
+          cat > results/api-response.json << EOF
+          {
+            "status": "${STATUS}",
+            "data": ${DATA},
+            "error": "${ERROR}"
+          }
+          EOF
+          
+          echo "Generated API response:"
+          cat results/api-response.json
 
       - name: Upload result
         uses: actions/upload-artifact@v4
