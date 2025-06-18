@@ -152,11 +152,23 @@ class CloudAuthService {
       
       // 解码base64内容
       const content = atob(fileData.content.replace(/\s/g, ''))
-      const userConfig: CloudUserConfig = JSON.parse(content)
+      const storedConfig = JSON.parse(content)
       
-      // 替换GitHub Token占位符
-      if (userConfig.githubConfig?.token === '${GITHUB_TOKEN}') {
-        userConfig.githubConfig.token = availableToken || this.configRepo.token
+      // 重构完整的用户配置，添加缺失的 GitHub token
+      // 确保从环境变量或配置中获取有效的 token
+      const effectiveToken = availableToken || this.configRepo.token || import.meta.env.VITE_CONFIG_REPO_TOKEN || storedConfig.githubConfig?.token
+      
+      if (!effectiveToken) {
+        console.warn('无法获取有效的 GitHub Token，请检查环境变量 VITE_CONFIG_REPO_TOKEN')
+        throw new Error('GitHub Token 配置缺失，请联系管理员')
+      }
+      
+      const userConfig: CloudUserConfig = {
+        ...storedConfig,
+        githubConfig: {
+          ...storedConfig.githubConfig,
+          token: effectiveToken
+        }
       }
       
       return userConfig
@@ -547,6 +559,23 @@ class CloudAuthService {
     }
   }
 
+  // 创建安全的配置副本，移除敏感信息以避免GitHub API安全检查
+  private createSafeConfigForStorage(config: CloudUserConfig): Omit<CloudUserConfig, 'githubConfig'> & { githubConfig: Omit<GitHubConfig, 'token'> } {
+    const { githubConfig, ...restConfig } = config
+    
+    // 移除 GitHub token，保留其他配置信息
+    const safeGithubConfig = {
+      owner: githubConfig.owner,
+      repo: githubConfig.repo,
+      branch: githubConfig.branch
+    }
+    
+    return {
+      ...restConfig,
+      githubConfig: safeGithubConfig
+    }
+  }
+
   // 更新用户文件
   private async updateUserFile(path: string, config: CloudUserConfig, token: string): Promise<void> {
     const url = `https://api.github.com/repos/${this.configRepo.owner}/${this.configRepo.repo}/contents/${path}`
@@ -565,10 +594,13 @@ class CloudAuthService {
 
     const fileInfo = await getResponse.json()
     
+    // 创建安全的配置副本，移除敏感信息
+    const safeConfig = this.createSafeConfigForStorage(config)
+    
     // 更新文件
     const updateBody = {
       message: `更新用户配置: ${config.username}`,
-      content: btoa(JSON.stringify(config, null, 2)),
+      content: btoa(JSON.stringify(safeConfig, null, 2)),
       sha: fileInfo.sha,
       branch: this.configRepo.branch || 'main'
     }
@@ -593,9 +625,12 @@ class CloudAuthService {
   private async createUserFile(path: string, config: CloudUserConfig, token: string): Promise<void> {
     const url = `https://api.github.com/repos/${this.configRepo.owner}/${this.configRepo.repo}/contents/${path}`
     
+    // 创建安全的配置副本，移除敏感信息
+    const safeConfig = this.createSafeConfigForStorage(config)
+    
     const createBody = {
       message: `创建用户配置: ${config.username}`,
-      content: btoa(JSON.stringify(config, null, 2)),
+      content: btoa(JSON.stringify(safeConfig, null, 2)),
       branch: this.configRepo.branch || 'main'
     }
 
