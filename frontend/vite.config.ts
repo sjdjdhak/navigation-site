@@ -6,7 +6,8 @@ import fs from 'fs'
 // https://vitejs.dev/config/
 export default defineConfig({
   // 根据部署环境设置不同的 base 路径
-  base: process.env.VERCEL ? '/' : (process.env.NODE_ENV === 'production' ? '/navigation-site/' : '/'),
+  // 如果是自定义域名（CNAME存在），使用根路径
+  base: process.env.VERCEL ? '/' : (fs.existsSync(resolve(__dirname, 'public/CNAME')) ? '/' : (process.env.NODE_ENV === 'production' ? '/navigation-site/' : '/')),
   plugins: [
     vue({
       script: {
