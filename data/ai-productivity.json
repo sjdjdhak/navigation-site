@@ -1,0 +1,15 @@
+[
+  {
+    "id": "github-copilot",
+    "title": "GitHub Copilot",
+    "description": "An AI pair programmer that offers autocomplete-style suggestions as you code.",
+    "url": "https://github.com/features/copilot",
+    "domain": "github.com",
+    "icon": "https://www.google.com/s2/favicons?domain=github.com&sz=64",
+    "tags": ["AI", "Coding", "Development", "GitHub"],
+    "categoryPath": ["ai-productivity", "coding-assistants"],
+    "featured": true,
+    "createdAt": "2025-09-12T21:36:00.000Z",
+    "updatedAt": "2025-09-12T21:36:00.000Z"
+  }
+]

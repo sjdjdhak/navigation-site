@@ -1,0 +1,28 @@
+[
+  {
+    "id": "chatgpt",
+    "title": "ChatGPT",
+    "description": "A conversational AI model by OpenAI that can generate human-like text.",
+    "url": "https://chat.openai.com/",
+    "domain": "openai.com",
+    "icon": "https://www.google.com/s2/favicons?domain=openai.com&sz=64",
+    "tags": ["AI", "Chat", "LLM", "OpenAI"],
+    "categoryPath": ["ai-chat-assistants", "large-language-models"],
+    "featured": true,
+    "createdAt": "2025-09-12T21:34:00.000Z",
+    "updatedAt": "2025-09-12T21:34:00.000Z"
+  },
+  {
+    "id": "perplexity-ai",
+    "title": "Perplexity AI",
+    "description": "An AI-powered search engine that provides direct answers to questions with cited sources.",
+    "url": "https://www.perplexity.ai/",
+    "domain": "perplexity.ai",
+    "icon": "https://www.google.com/s2/favicons?domain=perplexity.ai&sz=64",
+    "tags": ["AI", "Search", "Answers"],
+    "categoryPath": ["ai-chat-assistants", "ai-search-engines"],
+    "featured": true,
+    "createdAt": "2025-09-12T21:34:00.000Z",
+    "updatedAt": "2025-09-12T21:34:00.000Z"
+  }
+]

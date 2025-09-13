@@ -1,0 +1,15 @@
+[
+  {
+    "id": "midjourney",
+    "title": "Midjourney",
+    "description": "An independent research lab that produces an artificial intelligence program that creates images from textual descriptions.",
+    "url": "https://www.midjourney.com/",
+    "domain": "midjourney.com",
+    "icon": "https://www.google.com/s2/favicons?domain=midjourney.com&sz=64",
+    "tags": ["AI", "Image Generation", "Art"],
+    "categoryPath": ["generative-media", "image-generation"],
+    "featured": true,
+    "createdAt": "2025-09-12T21:35:00.000Z",
+    "updatedAt": "2025-09-12T21:35:00.000Z"
+  }
+]
